@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase/config"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // In demo mode there is no session to refresh — pass everything through.
   if (!isSupabaseConfigured()) {
     return NextResponse.next()
