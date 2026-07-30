@@ -28,6 +28,7 @@ export default async function PrayerRequestsPage() {
         <SubmissionForm
           type="prayer-request"
           showPrivate
+          allowVideo
           submitLabel="Request prayer"
           titlePlaceholder="Brief summary"
           bodyLabel="Request"
@@ -51,7 +52,17 @@ export default async function PrayerRequestsPage() {
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground text-pretty">
                     {s.body}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  {s.videoUrl && (
+                    <video
+                      controls
+                      preload="metadata"
+                      className="mt-3 w-full max-w-md rounded-lg border border-border bg-black"
+                    >
+                      <source src={s.videoUrl} />
+                      Your browser does not support embedded video.
+                    </video>
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {s.memberName} · {formatDate(s.createdAt)}
                   </p>
                 </div>

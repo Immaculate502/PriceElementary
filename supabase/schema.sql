@@ -62,8 +62,12 @@ create table if not exists public.submissions (
   body        text not null,
   status      public.submission_status not null default 'pending',
   is_private  boolean not null default false,
+  video_path  text,
   created_at  timestamptz not null default now()
 );
+
+-- If upgrading an existing install, add the column in place.
+alter table public.submissions add column if not exists video_path text;
 
 create index if not exists submissions_member_id_idx on public.submissions(member_id);
 create index if not exists submissions_status_idx on public.submissions(status);
@@ -166,3 +170,47 @@ insert into public.activities (pillar, title, description, points, frequency) va
   ('ministry', 'Small Group', 'Attend and contribute to your small group.', 20, 'weekly'),
   ('evangelism', 'Share Your Faith', 'Have a gospel conversation this week.', 25, 'weekly')
 on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Storage: private bucket for prayer-request / struggle-report video messages
+-- Objects are keyed by "<user_id>/<uuid>.<ext>" and served via signed URLs.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('prayer-videos', 'prayer-videos', false)
+on conflict (id) do nothing;
+
+-- Members may upload only into their own folder ("<their uid>/...")
+drop policy if exists "prayer_videos_insert_own" on storage.objects;
+create policy "prayer_videos_insert_own" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'prayer-videos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- Read access: the owner, an admin, OR any authenticated member when the
+-- video is attached to an approved, non-private submission (community view).
+drop policy if exists "prayer_videos_select_visible" on storage.objects;
+create policy "prayer_videos_select_visible" on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'prayer-videos'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or public.is_admin()
+      or exists (
+        select 1 from public.submissions s
+        where s.video_path = storage.objects.name
+          and s.status = 'approved'
+          and s.is_private = false
+      )
+    )
+  );
+
+drop policy if exists "prayer_videos_delete_own_or_admin" on storage.objects;
+create policy "prayer_videos_delete_own_or_admin" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'prayer-videos'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );

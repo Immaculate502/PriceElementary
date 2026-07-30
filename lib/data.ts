@@ -88,18 +88,30 @@ export async function getSubmissions(filter?: {
   const { data } = await query
   if (!data) return []
 
-  return data.map((d) => ({
-    id: d.id,
-    memberId: d.member_id,
-    memberName: d.member_name ?? "Member",
-    type: d.type,
-    pillar: d.pillar,
-    title: d.title,
-    body: d.body,
-    status: d.status,
-    createdAt: d.created_at,
-    isPrivate: d.is_private ?? false,
-  }))
+  return Promise.all(
+    data.map(async (d) => {
+      let videoUrl: string | null = null
+      if (d.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("prayer-videos")
+          .createSignedUrl(d.video_path, 60 * 60) // 1 hour
+        videoUrl = signed?.signedUrl ?? null
+      }
+      return {
+        id: d.id,
+        memberId: d.member_id,
+        memberName: d.member_name ?? "Member",
+        type: d.type,
+        pillar: d.pillar,
+        title: d.title,
+        body: d.body,
+        status: d.status,
+        createdAt: d.created_at,
+        isPrivate: d.is_private ?? false,
+        videoUrl,
+      }
+    }),
+  )
 }
 
 export async function getActivities() {

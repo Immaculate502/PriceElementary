@@ -17,6 +17,7 @@ export async function createSubmission(
   const type = String(formData.get("type") ?? "journal") as SubmissionType
   const pillar = String(formData.get("pillar") ?? "faith") as FamePillar
   const isPrivate = formData.get("isPrivate") === "on"
+  const videoPath = String(formData.get("videoPath") ?? "").trim()
 
   if (!title || !body) {
     return { ok: false, message: "Please provide both a title and some content." }
@@ -45,6 +46,7 @@ export async function createSubmission(
     body,
     status: "pending",
     is_private: isPrivate,
+    video_path: videoPath || null,
   })
 
   if (error) {

@@ -40,6 +40,7 @@ export interface Submission {
   status: SubmissionStatus
   createdAt: string
   isPrivate: boolean
+  videoUrl?: string | null
 }
 
 export interface ReadingPlanDay {
