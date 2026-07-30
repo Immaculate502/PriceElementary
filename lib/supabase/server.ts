@@ -8,7 +8,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './config'
  * callers can fall back to demo data.
  */
 export async function getSupabaseServerClient() {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured()) return null
 
   const cookieStore = await cookies()
 

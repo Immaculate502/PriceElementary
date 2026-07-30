@@ -8,7 +8,7 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './config'
  * connected so client components can degrade gracefully to demo mode.
  */
 export function getSupabaseBrowserClient() {
-  if (!isSupabaseConfigured) return null
+  if (!isSupabaseConfigured()) return null
   return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }
 

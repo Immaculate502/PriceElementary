@@ -10,5 +10,6 @@ export const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ??
   ''
 
-export const isSupabaseConfigured =
-  SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0
+export function isSupabaseConfigured() {
+  return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0
+}
