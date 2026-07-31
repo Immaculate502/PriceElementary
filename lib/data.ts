@@ -6,7 +6,9 @@ import {
   DEMO_MEMBERS,
   DEMO_SUBMISSIONS,
 } from "./demo-data"
-import { PILLARS, type FamePillar, type Member, type Submission } from "./types"
+import { PILLAR_META, type FamePillar, type Member, type Submission } from "./types"
+
+const PILLAR_KEYS = Object.keys(PILLAR_META) as FamePillar[]
 
 /**
  * Data-access layer.
@@ -126,7 +128,7 @@ export type PillarProgress = Record<FamePillar, number>
  * measure of "progress in each area" shown on the admin roster and detail page.
  */
 export function pillarProgress(submissions: Submission[]): PillarProgress {
-  const progress = Object.fromEntries(PILLARS.map((p) => [p, 0])) as PillarProgress
+  const progress = Object.fromEntries(PILLAR_KEYS.map((p) => [p, 0])) as PillarProgress
   for (const s of submissions) {
     if (s.status === "approved") progress[s.pillar] += 1
   }

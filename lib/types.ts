@@ -1,7 +1,5 @@
 export type FamePillar = "faith" | "action" | "ministry" | "evangelism"
 
-export const PILLARS: FamePillar[] = ["faith", "action", "ministry", "evangelism"]
-
 export interface Member {
   id: string
   name: string
