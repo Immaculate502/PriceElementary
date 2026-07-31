@@ -206,3 +206,19 @@ create policy "prayer_videos_delete_own_or_admin" on storage.objects
     bucket_id = 'prayer-videos'
     and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
   );
+
+-- ---------------------------------------------------------------------------
+-- App settings: key/value store for leadership configuration such as the
+-- admin-area password hash (key = 'admin_password_hash'). Admin-only access.
+-- ---------------------------------------------------------------------------
+create table if not exists public.app_settings (
+  key         text primary key,
+  value       text not null,
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.app_settings enable row level security;
+
+drop policy if exists "app_settings_admin_only" on public.app_settings;
+create policy "app_settings_admin_only" on public.app_settings
+  for all using (public.is_admin()) with check (public.is_admin());

@@ -1,6 +1,57 @@
 import type React from "react"
 import { cn } from "@/lib/utils"
-import { PILLAR_META, type FamePillar, type SubmissionStatus } from "@/lib/types"
+import { PILLAR_META, PILLARS, type FamePillar, type SubmissionStatus } from "@/lib/types"
+
+export function PillarProgressBars({
+  progress,
+  size = "sm",
+}: {
+  progress: Record<FamePillar, number>
+  size?: "sm" | "lg"
+}) {
+  const max = Math.max(1, ...PILLARS.map((p) => progress[p]))
+  return (
+    <div className={cn("grid gap-2", size === "lg" && "gap-3")}>
+      {PILLARS.map((pillar) => {
+        const meta = PILLAR_META[pillar]
+        const value = progress[pillar]
+        const pct = Math.round((value / max) * 100)
+        return (
+          <div key={pillar} className="flex items-center gap-2">
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded font-display font-bold text-white",
+                size === "lg" ? "h-6 w-6 text-sm" : "h-5 w-5 text-xs",
+              )}
+              style={{ backgroundColor: meta.token }}
+              title={meta.label}
+              aria-hidden="true"
+            >
+              {meta.letter}
+            </span>
+            {size === "lg" && (
+              <span className="w-24 shrink-0 text-sm text-foreground">{meta.label}</span>
+            )}
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${pct}%`, backgroundColor: meta.token }}
+              />
+            </div>
+            <span
+              className={cn(
+                "shrink-0 text-right tabular-nums text-muted-foreground",
+                size === "lg" ? "w-8 text-sm" : "w-5 text-xs",
+              )}
+            >
+              {value}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export function PageHeader({
   title,

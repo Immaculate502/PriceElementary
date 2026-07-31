@@ -1,6 +1,8 @@
-import { Clock, FileCheck2, Users2, Video } from "lucide-react"
+import Link from "next/link"
+import { Clock, FileCheck2, Users2, Video, ArrowRight } from "lucide-react"
 import { Card, EmptyState, PageHeader, PillarBadge, StatusBadge } from "@/components/ui-kit"
 import { ModerationControls } from "@/components/moderation-controls"
+import { AdminSecurity } from "@/components/admin-security"
 import { getMembers, getSubmissions } from "@/lib/data"
 import type { SubmissionType } from "@/lib/types"
 
@@ -54,15 +56,19 @@ export default async function AdminPage() {
             <p className="text-sm text-muted-foreground">Approved</p>
           </div>
         </Card>
-        <Card className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pillar-faith/15 text-pillar-faith">
-            <Users2 className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-2xl font-semibold text-foreground">{members.length}</p>
-            <p className="text-sm text-muted-foreground">Members</p>
-          </div>
-        </Card>
+        <Link href="/admin/members" className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Card className="flex items-center gap-4 transition-colors hover:border-gold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pillar-faith/15 text-pillar-faith">
+              <Users2 className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <p className="text-2xl font-semibold text-foreground">{members.length}</p>
+              <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                Members <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </p>
+            </div>
+          </Card>
+        </Link>
       </div>
 
       <section className="flex flex-col gap-4">
@@ -147,6 +153,13 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </Card>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="font-display text-xl font-semibold text-foreground">
+          Administrator settings
+        </h2>
+        <AdminSecurity />
       </section>
     </div>
   )

@@ -2,11 +2,11 @@ import { isSupabaseConfigured } from "./supabase/config"
 import { getSupabaseServerClient } from "./supabase/server"
 import {
   DEMO_ACTIVITIES,
-  DEMO_ADMIN,
   DEMO_MEMBER,
+  DEMO_MEMBERS,
   DEMO_SUBMISSIONS,
 } from "./demo-data"
-import type { Member, Submission } from "./types"
+import { PILLARS, type FamePillar, type Member, type Submission } from "./types"
 
 /**
  * Data-access layer.
@@ -46,12 +46,12 @@ export async function getCurrentMember(): Promise<Member> {
 }
 
 export async function getMembers(): Promise<Member[]> {
-  if (!isSupabaseConfigured()) return [DEMO_MEMBER, DEMO_ADMIN]
+  if (!isSupabaseConfigured()) return DEMO_MEMBERS
 
   const supabase = await getSupabaseServerClient()
-  if (!supabase) return [DEMO_MEMBER, DEMO_ADMIN]
+  if (!supabase) return DEMO_MEMBERS
   const { data } = await supabase.from("profiles").select("*")
-  if (!data?.length) return [DEMO_MEMBER, DEMO_ADMIN]
+  if (!data?.length) return DEMO_MEMBERS
 
   return data.map((d) => ({
     id: d.id,
@@ -112,6 +112,25 @@ export async function getSubmissions(filter?: {
       }
     }),
   )
+}
+
+export async function getMemberById(id: string): Promise<Member | null> {
+  const members = await getMembers()
+  return members.find((m) => m.id === id) ?? null
+}
+
+export type PillarProgress = Record<FamePillar, number>
+
+/**
+ * Count a member's APPROVED submissions per F.A.M.E. pillar. This is the
+ * measure of "progress in each area" shown on the admin roster and detail page.
+ */
+export function pillarProgress(submissions: Submission[]): PillarProgress {
+  const progress = Object.fromEntries(PILLARS.map((p) => [p, 0])) as PillarProgress
+  for (const s of submissions) {
+    if (s.status === "approved") progress[s.pillar] += 1
+  }
+  return progress
 }
 
 export async function getActivities() {
