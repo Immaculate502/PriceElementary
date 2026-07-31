@@ -166,6 +166,20 @@ export const DEMO_SUBMISSIONS: Submission[] = [
     createdAt: "2026-07-26T19:00:00Z",
     isPrivate: false,
   },
+  {
+    id: "s7",
+    memberId: "m7",
+    memberName: "Peter Nwosu",
+    type: "prayer-request",
+    pillar: "faith",
+    title: "Video message — family struggle",
+    body: "It was easier to record this than to write it down. Please pray for my family during this hard season.",
+    status: "pending",
+    createdAt: "2026-07-29T20:05:00Z",
+    isPrivate: true,
+    videoUrl:
+      "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  },
 ]
 
 export const DEMO_READING_PLAN: ReadingPlanDay[] = [

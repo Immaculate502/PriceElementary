@@ -188,23 +188,15 @@ create policy "prayer_videos_insert_own" on storage.objects
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- Read access: the owner, an admin, OR any authenticated member when the
--- video is attached to an approved, non-private submission (community view).
+-- Read access is leadership-only: the video's owner or an admin. Video
+-- messages are never exposed in the community feed.
 drop policy if exists "prayer_videos_select_visible" on storage.objects;
-create policy "prayer_videos_select_visible" on storage.objects
+drop policy if exists "prayer_videos_select_own_or_admin" on storage.objects;
+create policy "prayer_videos_select_own_or_admin" on storage.objects
   for select to authenticated
   using (
     bucket_id = 'prayer-videos'
-    and (
-      (storage.foldername(name))[1] = auth.uid()::text
-      or public.is_admin()
-      or exists (
-        select 1 from public.submissions s
-        where s.video_path = storage.objects.name
-          and s.status = 'approved'
-          and s.is_private = false
-      )
-    )
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
   );
 
 drop policy if exists "prayer_videos_delete_own_or_admin" on storage.objects;

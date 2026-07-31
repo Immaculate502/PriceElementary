@@ -1,4 +1,4 @@
-import { Clock, FileCheck2, Users2 } from "lucide-react"
+import { Clock, FileCheck2, Users2, Video } from "lucide-react"
 import { Card, EmptyState, PageHeader, PillarBadge, StatusBadge } from "@/components/ui-kit"
 import { ModerationControls } from "@/components/moderation-controls"
 import { getMembers, getSubmissions } from "@/lib/data"
@@ -84,7 +84,23 @@ export default async function AdminPage() {
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground text-pretty">
                     {s.body}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  {s.videoUrl && (
+                    <div className="mt-3">
+                      <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-pillar-ministry">
+                        <Video className="h-3.5 w-3.5" aria-hidden="true" />
+                        Video message
+                      </span>
+                      <video
+                        controls
+                        preload="metadata"
+                        className="w-full max-w-sm rounded-lg border border-border bg-black"
+                      >
+                        <source src={s.videoUrl} />
+                        Your browser does not support embedded video.
+                      </video>
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {s.memberName} · {formatDate(s.createdAt)}
                   </p>
                 </div>
