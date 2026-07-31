@@ -206,7 +206,6 @@ export function SubmissionForm({
                 ref={fileInputRef}
                 type="file"
                 accept="video/*"
-                capture="user"
                 className="sr-only"
                 disabled={uploading || !supabaseReady}
                 onChange={handleVideoSelect}
