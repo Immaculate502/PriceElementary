@@ -22,10 +22,14 @@ export const metadata: Metadata = {
   description:
     "A spiritual development portal for growing in Faith, Action, Ministry, and Evangelism. Track disciplines, journal, submit prayer requests, and share testimonies.",
   generator: "v0.app",
+  icons: {
+    icon: "/fame-emblem.png",
+    apple: "/fame-emblem.png",
+  },
 }
 
 export const viewport: Viewport = {
-  themeColor: "#18243f",
+  themeColor: "#0a0a0a",
 }
 
 export default function RootLayout({

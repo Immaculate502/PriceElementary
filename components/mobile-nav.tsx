@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FameEmblem } from "./fame-emblem"
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -44,7 +45,10 @@ export function MobileNav() {
           />
           <nav className="relative flex h-full w-72 max-w-[80%] flex-col bg-sidebar text-sidebar-foreground">
             <div className="flex items-center justify-between px-5 py-5">
-              <span className="font-display text-lg font-semibold">F.A.M.E.</span>
+              <span className="flex items-center gap-2">
+                <FameEmblem size={32} />
+                <span className="font-display text-lg font-semibold">F.A.M.E.</span>
+              </span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

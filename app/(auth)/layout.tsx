@@ -1,4 +1,5 @@
 import type React from "react"
+import { FameEmblem } from "@/components/fame-emblem"
 
 export default function AuthLayout({
   children,
@@ -10,9 +11,7 @@ export default function AuthLayout({
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between bg-navy p-12 text-navy-foreground lg:flex">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold text-gold-foreground font-display text-2xl font-bold">
-            F
-          </div>
+          <FameEmblem size={56} priority />
           <span className="font-display text-2xl font-semibold">F.A.M.E.</span>
         </div>
         <div>

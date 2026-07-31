@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FameEmblem } from "./fame-emblem"
 
 const memberLinks = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -40,9 +41,7 @@ export function AppSidebar() {
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex">
       <div className="flex items-center gap-3 px-6 py-6">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold text-gold-foreground">
-          <span className="font-display text-xl font-bold tracking-tight">F</span>
-        </div>
+        <FameEmblem size={48} priority />
         <div className="leading-tight">
           <p className="font-display text-lg font-semibold text-sidebar-foreground">F.A.M.E.</p>
           <p className="text-xs text-sidebar-foreground/60">Spiritual Growth Portal</p>

@@ -61,38 +61,39 @@
 
   /* Cream base */
   --background: oklch(0.972 0.011 84);
-  --foreground: oklch(0.24 0.03 260);
+  --foreground: oklch(0.22 0.004 84);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.03 260);
+  --card-foreground: oklch(0.22 0.004 84);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.03 260);
+  --popover-foreground: oklch(0.22 0.004 84);
 
-  /* Navy primary */
-  --primary: oklch(0.29 0.055 262);
+  /* Black primary */
+  --primary: oklch(0.2 0.004 84);
   --primary-foreground: oklch(0.98 0.01 84);
 
   --secondary: oklch(0.95 0.012 84);
-  --secondary-foreground: oklch(0.29 0.055 262);
+  --secondary-foreground: oklch(0.2 0.004 84);
 
   --muted: oklch(0.95 0.012 84);
-  --muted-foreground: oklch(0.52 0.02 262);
+  --muted-foreground: oklch(0.5 0.006 84);
 
   /* Gold accent */
-  --accent: oklch(0.78 0.11 82);
-  --accent-foreground: oklch(0.28 0.04 262);
+  --accent: oklch(0.79 0.13 80);
+  --accent-foreground: oklch(0.2 0.004 84);
 
   --destructive: oklch(0.52 0.15 27);
   --destructive-foreground: oklch(0.98 0.01 84);
 
-  --border: oklch(0.9 0.014 84);
-  --input: oklch(0.9 0.014 84);
-  --ring: oklch(0.78 0.11 82);
+  --border: oklch(0.9 0.012 84);
+  --input: oklch(0.9 0.012 84);
+  --ring: oklch(0.79 0.13 80);
 
-  --gold: oklch(0.78 0.11 82);
-  --gold-foreground: oklch(0.28 0.04 262);
-  --navy: oklch(0.29 0.055 262);
-  --navy-foreground: oklch(0.98 0.01 84);
+  --gold: oklch(0.79 0.13 80);
+  --gold-foreground: oklch(0.18 0.004 84);
+  /* "navy" tokens repurposed as the emblem's black surface */
+  --navy: oklch(0.19 0.004 84);
+  --navy-foreground: oklch(0.97 0.012 84);
   --success: oklch(0.55 0.09 165);
   --success-foreground: oklch(0.98 0.01 165);
   --warning: oklch(0.62 0.14 27);
@@ -104,11 +105,11 @@
   --pillar-ministry: oklch(0.55 0.09 165);
   --pillar-evangelism: oklch(0.62 0.15 20);
 
-  --sidebar: oklch(0.24 0.045 262);
-  --sidebar-foreground: oklch(0.9 0.01 84);
-  --sidebar-accent: oklch(0.31 0.05 262);
+  --sidebar: oklch(0.17 0.004 84);
+  --sidebar-foreground: oklch(0.9 0.008 84);
+  --sidebar-accent: oklch(0.26 0.006 84);
   --sidebar-accent-foreground: oklch(0.98 0.01 84);
-  --sidebar-border: oklch(0.34 0.05 262);
+  --sidebar-border: oklch(0.3 0.006 84);
 }
 
 @layer base {
