@@ -31,6 +31,13 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname
   const isAuthRoute = path === "/login" || path === "/signup"
+  // The OAuth callback runs BEFORE a session exists, so it must stay reachable
+  // while unauthenticated or Google sign-in would loop back to /login.
+  const isPublicRoute = path.startsWith("/auth/")
+
+  if (isPublicRoute) {
+    return response
+  }
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()

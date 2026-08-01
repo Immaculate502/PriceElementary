@@ -122,6 +122,34 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
       <SubmitButton label={mode === "login" ? "Sign in" : "Create account"} />
 
+      <div className="flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleGoogle}
+        disabled={googleBusy}
+        className="w-full gap-2 bg-background"
+      >
+        <GoogleIcon />
+        {googleBusy
+          ? "Redirecting to Google…"
+          : mode === "login"
+            ? "Sign in with Google"
+            : "Sign up with Google"}
+      </Button>
+
+      {googleMessage && (
+        <p className="flex items-center gap-1.5 text-sm text-destructive" role="status">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {googleMessage}
+        </p>
+      )}
+
       {state && (
         <p
           className={`flex items-center gap-1.5 text-sm ${
