@@ -18,6 +18,8 @@ const links = [
   { href: "/prayer-schedule", label: "Prayer Schedule" },
   { href: "/testimonies", label: "Testimonies" },
   { href: "/admin", label: "Admin Dashboard" },
+  { href: "/admin/members", label: "Members" },
+  { href: "/admin/activities", label: "Activities" },
 ]
 
 export function MobileNav() {
