@@ -1,4 +1,4 @@
-import { Card, PageHeader, PillarBadge } from "@/components/ui-kit"
+import { Card, EmptyState, PageHeader, PillarBadge } from "@/components/ui-kit"
 import { getActivities } from "@/lib/data"
 import { PILLAR_META, type FamePillar } from "@/lib/types"
 
@@ -13,6 +13,13 @@ export default async function ActivitiesPage() {
         title="F.A.M.E. Activities"
         description="Track the disciplines that shape a growing disciple across all four pillars. Complete activities to earn growth points and build your streak."
       />
+
+      {activities.length === 0 && (
+        <EmptyState
+          title="No activities yet"
+          description="Your leaders are still setting up the activity list. Check back soon."
+        />
+      )}
 
       {pillars.map((pillar) => {
         const items = activities.filter((a) => a.pillar === pillar)

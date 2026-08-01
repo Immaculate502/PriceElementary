@@ -86,6 +86,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Spend 15 minutes in prayer and the Word before your day begins.",
     points: 10,
     frequency: "daily",
+    active: true,
   },
   {
     id: "a2",
@@ -94,6 +95,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Memorize and recite the weekly memory verse.",
     points: 15,
     frequency: "weekly",
+    active: true,
   },
   {
     id: "a3",
@@ -102,6 +104,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Perform an intentional act of service for someone in need.",
     points: 10,
     frequency: "daily",
+    active: true,
   },
   {
     id: "a4",
@@ -110,6 +113,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Participate in the monthly community fast.",
     points: 25,
     frequency: "monthly",
+    active: true,
   },
   {
     id: "a5",
@@ -118,6 +122,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Volunteer with a ministry team during the week.",
     points: 20,
     frequency: "weekly",
+    active: true,
   },
   {
     id: "a6",
@@ -126,6 +131,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Meet with your discipleship group or mentor.",
     points: 15,
     frequency: "weekly",
+    active: true,
   },
   {
     id: "a7",
@@ -134,6 +140,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Have a gospel conversation with someone this week.",
     points: 20,
     frequency: "weekly",
+    active: true,
   },
   {
     id: "a8",
@@ -142,6 +149,7 @@ export const DEMO_ACTIVITIES: Activity[] = [
     description: "Invite a friend to a service or community event.",
     points: 15,
     frequency: "monthly",
+    active: true,
   },
 ]
 

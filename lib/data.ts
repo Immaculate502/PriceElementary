@@ -6,7 +6,13 @@ import {
   DEMO_MEMBERS,
   DEMO_SUBMISSIONS,
 } from "./demo-data"
-import { PILLAR_META, type FamePillar, type Member, type Submission } from "./types"
+import {
+  PILLAR_META,
+  type Activity,
+  type FamePillar,
+  type Member,
+  type Submission,
+} from "./types"
 
 const PILLAR_KEYS = Object.keys(PILLAR_META) as FamePillar[]
 
@@ -135,20 +141,43 @@ export function pillarProgress(submissions: Submission[]): PillarProgress {
   return progress
 }
 
-export async function getActivities() {
-  if (!isSupabaseConfigured()) return DEMO_ACTIVITIES
+/**
+ * Members only ever see active activities. Leadership passes
+ * `includeInactive` so retired ones can still be reviewed and restored.
+ */
+export async function getActivities(
+  options?: { includeInactive?: boolean },
+): Promise<Activity[]> {
+  const includeInactive = options?.includeInactive ?? false
+
+  if (!isSupabaseConfigured()) {
+    return includeInactive ? DEMO_ACTIVITIES : DEMO_ACTIVITIES.filter((a) => a.active)
+  }
 
   const supabase = await getSupabaseServerClient()
   if (!supabase) return DEMO_ACTIVITIES
-  const { data } = await supabase.from("activities").select("*")
-  if (!data?.length) return DEMO_ACTIVITIES
+
+  let query = supabase
+    .from("activities")
+    .select("*")
+    .order("pillar", { ascending: true })
+    .order("title", { ascending: true })
+
+  if (!includeInactive) query = query.eq("active", true)
+
+  const { data } = await query
+
+  // An empty table is a real state once a leader retires everything, so only
+  // fall back to demo data when the query itself failed.
+  if (!data) return DEMO_ACTIVITIES
 
   return data.map((d) => ({
     id: d.id,
     pillar: d.pillar,
     title: d.title,
-    description: d.description,
+    description: d.description ?? "",
     points: d.points ?? 0,
     frequency: d.frequency ?? "weekly",
+    active: d.active ?? true,
   }))
 }

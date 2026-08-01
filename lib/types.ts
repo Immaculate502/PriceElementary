@@ -10,13 +10,20 @@ export interface Member {
   streak: number
 }
 
+export type ActivityFrequency = "daily" | "weekly" | "monthly"
+
 export interface Activity {
   id: string
   pillar: FamePillar
   title: string
   description: string
   points: number
-  frequency: "daily" | "weekly" | "monthly"
+  frequency: ActivityFrequency
+  /**
+   * Retired activities are hidden from members but kept in the database so
+   * previously logged submissions, points and streaks stay intact.
+   */
+  active: boolean
 }
 
 export type SubmissionType =

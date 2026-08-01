@@ -49,8 +49,17 @@ create table if not exists public.activities (
   description text not null default '',
   points      integer not null default 0 check (points >= 0),
   frequency   public.activity_frequency not null default 'weekly',
+  -- Leaders retire activities instead of deleting them, so submissions,
+  -- points and streaks that reference them stay intact.
+  active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
+
+-- Added after the initial release; keeps existing installs in sync.
+alter table public.activities
+  add column if not exists active boolean not null default true;
+
+create index if not exists activities_active_idx on public.activities (active);
 
 create table if not exists public.submissions (
   id          uuid primary key default gen_random_uuid(),

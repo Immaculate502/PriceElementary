@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Clock, FileCheck2, Users2, Video, ArrowRight } from "lucide-react"
+import { Clock, FileCheck2, ListChecks, Users2, Video, ArrowRight } from "lucide-react"
 import { Card, EmptyState, PageHeader, PillarBadge, StatusBadge } from "@/components/ui-kit"
 import { ModerationControls } from "@/components/moderation-controls"
 import { AdminSecurity } from "@/components/admin-security"
@@ -70,6 +70,24 @@ export default async function AdminPage() {
           </Card>
         </Link>
       </div>
+
+      <Link
+        href="/admin/activities"
+        className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Card className="flex items-center gap-4 transition-colors hover:border-gold">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pillar-action/15 text-pillar-action">
+            <ListChecks className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-foreground">Manage activities</p>
+            <p className="flex items-center gap-1 text-sm text-muted-foreground">
+              Add, edit, or retire what members work through
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </p>
+          </div>
+        </Card>
+      </Link>
 
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-xl font-semibold text-foreground">
