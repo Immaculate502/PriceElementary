@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useState } from "react"
+import { useActionState, useEffect, useState } from "react"
 import { useFormStatus } from "react-dom"
 import {
   AlertCircle,
@@ -156,6 +156,12 @@ function AddActivityForm() {
     null,
   )
 
+  // Collapse the form once the activity is saved; the confirmation still shows
+  // beneath the Add button, and the new row appears in its pillar below.
+  useEffect(() => {
+    if (state?.ok) setOpen(false)
+  }, [state])
+
   if (!open) {
     return (
       <div className="flex flex-col gap-2">
@@ -208,6 +214,12 @@ function EditActivityForm({
     null,
   )
 
+  // Collapse back to the row on success so the leader sees the saved values
+  // rather than being left staring at an open form.
+  useEffect(() => {
+    if (state?.ok) onDone()
+  }, [state, onDone])
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="activityId" value={activity.id} />
@@ -249,6 +261,9 @@ function RetireSubmit({ active, title }: { active: boolean; title: string }) {
       variant="outline"
       disabled={pending}
       className="gap-1.5 bg-background"
+      // aria-label rather than an extra sr-only span, which would make screen
+      // readers announce the word "Retire" twice.
+      aria-label={active ? `Retire ${title}` : `Restore ${title}`}
     >
       {active ? (
         <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
@@ -256,9 +271,6 @@ function RetireSubmit({ active, title }: { active: boolean; title: string }) {
         <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
       )}
       {pending ? "Saving…" : active ? "Retire" : "Restore"}
-      <span className="sr-only">
-        {active ? `Retire ${title}` : `Restore ${title}`}
-      </span>
     </Button>
   )
 }
