@@ -9,6 +9,7 @@ import {
   StatusBadge,
   EmptyState,
 } from "@/components/ui-kit"
+import { MemberRoleToggle } from "@/components/member-role-toggle"
 import { getMemberById, getSubmissions, pillarProgress } from "@/lib/data"
 
 function formatDateTime(iso: string) {
@@ -67,10 +68,17 @@ export default async function MemberDetailPage({
           title={member.name}
           description={member.email}
           action={
-            <span className="flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-foreground">
-              <Flame className="h-4 w-4 text-gold" aria-hidden="true" />
-              {member.streak} day streak
-            </span>
+            <div className="flex flex-col items-end gap-2">
+              <span className="flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-foreground">
+                <Flame className="h-4 w-4 text-gold" aria-hidden="true" />
+                {member.streak} day streak
+              </span>
+              <MemberRoleToggle
+                memberId={member.id}
+                memberName={member.name}
+                isAdmin={member.role === "admin"}
+              />
+            </div>
           }
         />
       </div>

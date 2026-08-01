@@ -48,6 +48,48 @@ export async function lockAdmin(): Promise<void> {
   revalidatePath("/admin")
 }
 
+export async function setMemberRole(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  if (!(await isAdminUnlocked())) {
+    return { ok: false, message: "Unlock the leadership area first." }
+  }
+
+  const memberId = String(formData.get("memberId") ?? "")
+  const role = String(formData.get("role") ?? "")
+
+  if (!memberId) return { ok: false, message: "Missing member." }
+  if (role !== "admin" && role !== "member") {
+    return { ok: false, message: "Invalid role." }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return {
+      ok: false,
+      message: "Connect Supabase to manage leadership roles.",
+    }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  // Role changes run through a guarded database function so a member can never
+  // promote themselves by writing to their own profile row.
+  const { error } = await supabase.rpc("set_member_role", {
+    target_id: memberId,
+    new_role: role,
+  })
+  if (error) return { ok: false, message: error.message }
+
+  revalidatePath("/admin/members")
+  revalidatePath(`/admin/members/${memberId}`)
+  return {
+    ok: true,
+    message: role === "admin" ? "Member promoted to leader." : "Leader access removed.",
+  }
+}
+
 export async function changeAdminPassword(
   _prev: AdminActionResult | null,
   formData: FormData,

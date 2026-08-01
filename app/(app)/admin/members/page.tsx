@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Flame, ChevronRight } from "lucide-react"
 import { Card, PageHeader, PillarProgressBars } from "@/components/ui-kit"
+import { MemberRoleToggle } from "@/components/member-role-toggle"
 import { getMembers, getSubmissions, pillarProgress } from "@/lib/data"
 
 function formatDate(iso: string) {
@@ -22,6 +23,16 @@ export default async function MembersPage() {
         title="Members"
         description="Monitor each member's progress across the four F.A.M.E. pillars. Select a member to review their full history and messages."
       />
+
+      {members.length === 0 && (
+        <Card className="flex flex-col gap-2 text-center">
+          <p className="font-medium text-foreground">No members yet</p>
+          <p className="text-sm text-muted-foreground text-pretty">
+            Once members create accounts they will appear here. The first person to sign up can be
+            promoted to leader from this page.
+          </p>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {members.map((m) => {
@@ -72,6 +83,16 @@ export default async function MembersPage() {
                   Approved by pillar
                 </p>
                 <PillarProgressBars progress={progress} />
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                <p className="text-xs text-muted-foreground">
+                  {m.role === "admin" ? "Has leadership access" : "Member access"}
+                </p>
+                <MemberRoleToggle
+                  memberId={m.id}
+                  memberName={m.name}
+                  isAdmin={m.role === "admin"}
+                />
               </div>
             </Card>
           )
