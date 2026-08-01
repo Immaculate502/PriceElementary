@@ -107,9 +107,19 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       </div>
 
       <div className="grid gap-2">
-        <label htmlFor="password" className="text-sm font-medium text-foreground">
-          Password
-        </label>
+        <div className="flex items-baseline justify-between gap-2">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
+          {mode === "login" && (
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-accent-foreground hover:underline"
+            >
+              Forgot password?
+            </Link>
+          )}
+        </div>
         <input
           id="password"
           name="password"

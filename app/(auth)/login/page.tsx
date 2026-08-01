@@ -1,8 +1,15 @@
 import Link from "next/link"
+import { AlertCircle } from "lucide-react"
 import { AuthForm } from "@/components/auth-form"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
+  const { error } = await searchParams
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 lg:hidden">
@@ -18,6 +25,20 @@ export default function LoginPage() {
           Sign in to continue your spiritual journey.
         </p>
       </div>
+
+      {error && (
+        <p
+          className="flex items-start gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="text-pretty">
+            {error === "recovery"
+              ? "That password reset link has expired or was already used. Request a new one below."
+              : "We could not complete that sign-in. Please try again."}
+          </span>
+        </p>
+      )}
 
       <AuthForm mode="login" />
 

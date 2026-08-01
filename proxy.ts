@@ -30,7 +30,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-  const isAuthRoute = path === "/login" || path === "/signup"
+  // Signed-out pages. /reset-password is deliberately NOT here: the recovery
+  // link creates a session first, so treating it as an auth route would bounce
+  // the member straight to the dashboard before they could set a password.
+  const isAuthRoute = path === "/login" || path === "/signup" || path === "/forgot-password"
   // The OAuth callback runs BEFORE a session exists, so it must stay reachable
   // while unauthenticated or Google sign-in would loop back to /login.
   const isPublicRoute = path.startsWith("/auth/")
