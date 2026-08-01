@@ -75,15 +75,18 @@ create index if not exists submissions_status_idx on public.submissions(status);
 -- ---------------------------------------------------------------------------
 -- Helper: is the current user an admin? (SECURITY DEFINER avoids RLS recursion)
 -- ---------------------------------------------------------------------------
+-- search_path is pinned to '' (and tables fully qualified) so a caller cannot
+-- shadow a name and run their own code with the function owner's privileges.
 create or replace function public.is_admin()
 returns boolean
 language sql
 security definer
-set search_path = public
+set search_path = ''
+stable
 as $$
   select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
   );
 $$;
 
@@ -94,13 +97,18 @@ create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
+  -- Handles both email sign-up (full_name) and Google OAuth (name).
   insert into public.profiles (id, full_name, email)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    coalesce(
+      nullif(new.raw_user_meta_data ->> 'full_name', ''),
+      nullif(new.raw_user_meta_data ->> 'name', ''),
+      split_part(coalesce(new.email, 'Member'), '@', 1)
+    ),
     new.email
   )
   on conflict (id) do nothing;
@@ -125,19 +133,91 @@ drop policy if exists "profiles_select_own_or_admin" on public.profiles;
 create policy "profiles_select_own_or_admin" on public.profiles
   for select using (auth.uid() = id or public.is_admin());
 
-drop policy if exists "profiles_update_own" on public.profiles;
-create policy "profiles_update_own" on public.profiles
-  for update using (auth.uid() = id) with check (auth.uid() = id);
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own" on public.profiles
+  for insert with check (auth.uid() = id);
 
--- submissions: members manage their own; public (approved & not private) is
--- readable by any authenticated user; admins can read/moderate everything
+drop policy if exists "profiles_update_own" on public.profiles;
+drop policy if exists "profiles_update_own_or_admin" on public.profiles;
+create policy "profiles_update_own_or_admin" on public.profiles
+  for update using (auth.uid() = id or public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- Role management
+--
+-- The policy above lets a member update their own profile row, which on its
+-- own would allow anyone to set role='admin' on themselves. This trigger
+-- rejects any role change that does not come from set_member_role() below.
+-- ---------------------------------------------------------------------------
+create or replace function public.prevent_role_self_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.role is distinct from old.role
+     and coalesce(current_setting('fame.allow_role_change', true), '') <> 'on'
+  then
+    raise exception 'Roles can only be changed by a leader from the Leadership area';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_guard_role on public.profiles;
+create trigger profiles_guard_role
+  before update on public.profiles
+  for each row execute function public.prevent_role_self_change();
+
+-- Guarded promote/demote. Callable by an existing leader, or by anyone while
+-- no leader exists yet (first-leader bootstrap, additionally gated in the app
+-- by the administrator password). Never lets the last leader be demoted.
+create or replace function public.set_member_role(
+  target_id uuid,
+  new_role  public.member_role
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  admin_count int;
+  target_is_admin boolean;
+begin
+  select count(*) into admin_count from public.profiles where role = 'admin';
+
+  if not (public.is_admin() or admin_count = 0) then
+    raise exception 'Only a leader can change member roles';
+  end if;
+
+  select (role = 'admin') into target_is_admin
+  from public.profiles where id = target_id;
+
+  if target_is_admin is null then
+    raise exception 'Member not found';
+  end if;
+
+  if new_role = 'member' and target_is_admin and admin_count <= 1 then
+    raise exception 'At least one leader must remain';
+  end if;
+
+  perform set_config('fame.allow_role_change', 'on', true);
+  update public.profiles set role = new_role where id = target_id;
+end;
+$$;
+
+revoke all on function public.set_member_role(uuid, public.member_role) from public;
+grant execute on function public.set_member_role(uuid, public.member_role) to authenticated;
+
+-- submissions: a member sees only their own entries; leadership sees all.
+-- Deliberately private — journals, confessions and struggle reports are never
+-- readable by other members, so there is no "approved and public" case here.
 drop policy if exists "submissions_select_visible" on public.submissions;
-create policy "submissions_select_visible" on public.submissions
-  for select using (
-    auth.uid() = member_id
-    or public.is_admin()
-    or (status = 'approved' and is_private = false)
-  );
+drop policy if exists "submissions_select_own_or_admin" on public.submissions;
+create policy "submissions_select_own_or_admin" on public.submissions
+  for select using (auth.uid() = member_id or public.is_admin());
 
 drop policy if exists "submissions_insert_own" on public.submissions;
 create policy "submissions_insert_own" on public.submissions
@@ -153,31 +233,46 @@ create policy "submissions_delete_own_or_admin" on public.submissions
 
 -- activities: readable by all authenticated users; only admins manage them
 drop policy if exists "activities_select_all" on public.activities;
-create policy "activities_select_all" on public.activities
-  for select using (auth.role() = 'authenticated');
+drop policy if exists "activities_select_authenticated" on public.activities;
+create policy "activities_select_authenticated" on public.activities
+  for select to authenticated using (true);
 
 drop policy if exists "activities_write_admin" on public.activities;
-create policy "activities_write_admin" on public.activities
+drop policy if exists "activities_admin_write" on public.activities;
+create policy "activities_admin_write" on public.activities
   for all using (public.is_admin()) with check (public.is_admin());
 
 -- ---------------------------------------------------------------------------
 -- Seed activities (optional starter content)
 -- ---------------------------------------------------------------------------
-insert into public.activities (pillar, title, description, points, frequency) values
-  ('faith', 'Daily Scripture Reading', 'Read the assigned passage and reflect.', 10, 'daily'),
-  ('faith', 'Morning Prayer', 'Begin the day in prayer and worship.', 5, 'daily'),
-  ('action', 'Act of Service', 'Serve someone in your household or community.', 15, 'weekly'),
-  ('ministry', 'Small Group', 'Attend and contribute to your small group.', 20, 'weekly'),
-  ('evangelism', 'Share Your Faith', 'Have a gospel conversation this week.', 25, 'weekly')
-on conflict do nothing;
+-- Guarded by "not exists" rather than "on conflict": the primary key is a
+-- generated uuid, so it never collides and re-running would duplicate rows.
+insert into public.activities (pillar, title, description, points, frequency)
+select * from (values
+  ('faith'::public.fame_pillar,      'Daily Scripture reading',  'Read the assigned passage and note one truth to carry into your day.', 10, 'daily'::public.activity_frequency),
+  ('faith'::public.fame_pillar,      'Morning prayer',           'Begin the day in prayer before other commitments.',                    10, 'daily'::public.activity_frequency),
+  ('faith'::public.fame_pillar,      'Weekly journal entry',     'Reflect in writing on how God moved during the week.',                 15, 'weekly'::public.activity_frequency),
+  ('action'::public.fame_pillar,     'Act of service',           'Serve someone in practical love without expecting return.',            15, 'weekly'::public.activity_frequency),
+  ('action'::public.fame_pillar,     'Community fast',           'Join the community in a scheduled season of fasting.',                 25, 'monthly'::public.activity_frequency),
+  ('action'::public.fame_pillar,     'Volunteer outreach',       'Give time to an outreach, food drive, or benevolence effort.',         20, 'monthly'::public.activity_frequency),
+  ('ministry'::public.fame_pillar,   'Serve on a team',          'Take your place on a worship, media, hospitality, or care team.',      20, 'weekly'::public.activity_frequency),
+  ('ministry'::public.fame_pillar,   'Host or lead small group', 'Open your home or lead discussion for a small group gathering.',       25, 'weekly'::public.activity_frequency),
+  ('ministry'::public.fame_pillar,   'Mentor a member',          'Walk alongside a newer member and encourage their growth.',            30, 'monthly'::public.activity_frequency),
+  ('evangelism'::public.fame_pillar, 'Share your testimony',     'Tell someone what God has done in your life.',                         20, 'weekly'::public.activity_frequency),
+  ('evangelism'::public.fame_pillar, 'Invite someone to church', 'Personally invite and welcome a guest to a gathering.',                15, 'weekly'::public.activity_frequency),
+  ('evangelism'::public.fame_pillar, 'Gospel conversation',      'Have an intentional conversation about the gospel.',                   20, 'monthly'::public.activity_frequency)
+) as seed(pillar, title, description, points, frequency)
+where not exists (select 1 from public.activities);
 
 -- ---------------------------------------------------------------------------
 -- Storage: private bucket for prayer-request / struggle-report video messages
 -- Objects are keyed by "<user_id>/<uuid>.<ext>" and served via signed URLs.
 -- ---------------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('prayer-videos', 'prayer-videos', false)
-on conflict (id) do nothing;
+-- 50 MB cap keeps phone recordings reasonable. Enforced by Supabase itself,
+-- so it cannot be bypassed from the client.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('prayer-videos', 'prayer-videos', false, 52428800)
+on conflict (id) do update set public = false, file_size_limit = 52428800;
 
 -- Members may upload only into their own folder ("<their uid>/...")
 drop policy if exists "prayer_videos_insert_own" on storage.objects;
