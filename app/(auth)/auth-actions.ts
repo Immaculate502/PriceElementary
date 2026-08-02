@@ -5,6 +5,8 @@ import { headers } from "next/headers"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
+import { isEmailConfigured, sendEmail } from "@/lib/email"
+import { passwordResetEmail } from "@/lib/email-templates"
 
 export type AuthResult = { ok: boolean; message: string }
 
@@ -146,16 +148,55 @@ export async function requestPasswordReset(
 
   // Built with the URL API so an existing query string on the configured
   // redirect URL is preserved rather than clobbered.
-  let redirectTo: string | undefined
-  try {
-    const url = new URL(base)
-    url.searchParams.set("next", "/reset-password")
-    redirectTo = url.toString()
-  } catch {
-    redirectTo = undefined
+  const buildRedirect = (extra?: Record<string, string>) => {
+    try {
+      const url = new URL(base)
+      url.searchParams.set("next", "/reset-password")
+      for (const [k, v] of Object.entries(extra ?? {})) url.searchParams.set(k, v)
+      return url.toString()
+    } catch {
+      return undefined
+    }
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  // Preferred path: generate the recovery token ourselves and deliver it through
+  // Resend. This avoids Supabase's built-in mailer entirely, which can only
+  // reach addresses in the project owner's org and is heavily rate limited.
+  const admin = getSupabaseAdminClient()
+
+  if (admin && isEmailConfigured()) {
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+    })
+
+    // A missing user still returns an error here — swallow it and show the
+    // generic message so the page can't be used to enumerate members.
+    if (!error && data?.properties?.hashed_token) {
+      const link = buildRedirect({
+        token_hash: data.properties.hashed_token,
+        type: "recovery",
+      })
+
+      if (link) {
+        const { subject, html, text } = passwordResetEmail(link)
+        const sent = await sendEmail({ to: email, subject, html, text })
+
+        // Log delivery failures server-side; the member still sees the generic
+        // message rather than a scary error they can't act on.
+        if (!sent.ok) {
+          console.log("[v0] Resend delivery failed:", sent.error)
+        }
+      }
+    }
+
+    return { ok: true, message: generic }
+  }
+
+  // Fallback: no Resend key configured, so use Supabase's own mailer.
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: buildRedirect(),
+  })
 
   // Rate limiting is the one failure worth surfacing, otherwise a member could
   // sit waiting for an email that was never sent.
