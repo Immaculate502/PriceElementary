@@ -345,10 +345,46 @@ test({
   expected: "The reflection is saved and enters the review queue for leadership.",
 })
 test({
-  title: "View the reading plan",
-  tag: "Member",
-  steps: ["Open Reading Plan."],
-  expected: "A structured reading plan is displayed for members to follow.",
+  title: "Browse the Lessons list",
+  tag: "Member · Lessons",
+  steps: ['Open "Lessons" from the menu.'],
+  expected:
+    "Every lesson a leader has published is listed as a card showing its title, a short summary, its scripture reference, and how many questions it asks. Retired lessons do not appear.",
+})
+test({
+  title: "Open a lesson and read it",
+  tag: "Member · Lessons",
+  steps: ["From the Lessons list, tap a lesson to open it."],
+  expected:
+    "The lesson opens showing (in order) the teaching video if one was added, a 'Scripture to read' card, a 'Reading instructions' card, and a 'Your answers' section listing each question with a text box beneath it.",
+})
+test({
+  title: "Watch the teaching video",
+  tag: "Member · Lessons · Video",
+  steps: ["On a lesson that has a video, press play."],
+  expected:
+    "The teaching video plays inside the lesson. Lessons without a video simply omit the video block — nothing looks broken.",
+})
+test({
+  title: "Answer the questions and submit",
+  tag: "Member · Lessons",
+  steps: [
+    "In the 'Your answers' section, type an answer into each question's box.",
+    'Tap "Submit for review".',
+  ],
+  expected:
+    "Your answers are saved, a confirmation message appears, and the lesson now shows a 'Pending' status. Submitting with every box empty is refused with a clear message.",
+})
+test({
+  title: "Reopen and update your answers",
+  tag: "Member · Lessons",
+  steps: [
+    "Return to a lesson you already submitted.",
+    "Change one of your answers.",
+    'Tap "Update my answers".',
+  ],
+  expected:
+    "Your previous answers are pre-filled so you can edit them. After updating, the button reads 'Update my answers' (not 'Submit'), and the response returns to 'Pending' for the leader to review again.",
 })
 test({
   title: "Record a confession",
@@ -441,7 +477,7 @@ test({
   tag: "Leader",
   steps: ["With Leadership unlocked, view the Admin Dashboard."],
   expected:
-    "You see community statistics and a list of submissions awaiting review, plus a shortcut to manage activities.",
+    "You see community statistics and a list of submissions awaiting review, plus shortcut cards to manage activities, manage lessons (with a count of responses waiting), and download this testing manual as a PDF.",
 })
 test({
   title: "View the members list",
@@ -512,6 +548,43 @@ test({
   tag: "Leader",
   steps: ["In the Retired section, tap 'Restore'."],
   expected: "The activity becomes active again and returns to members' lists with its settings intact.",
+})
+test({
+  title: "Create a lesson with a video and questions",
+  tag: "Leader · Lessons",
+  steps: [
+    'Open "Lessons" under Leadership, then tap "Add lesson".',
+    "Enter a title, summary, scripture reference, and reading instructions.",
+    "Optionally upload a teaching video from your device.",
+    'Add one or more questions using "Add question", then save.',
+  ],
+  expected:
+    "The lesson is created and appears in the leader's lesson list, and immediately becomes available to members on the Lessons page. Note: creating lessons requires an admin/leader role, not just the Leadership password.",
+})
+test({
+  title: "Edit a lesson",
+  tag: "Leader · Lessons",
+  steps: ['On the Lessons page, tap "Edit" on a lesson.', "Change its wording or questions and save."],
+  expected:
+    "The lesson shows your updated content. Members see the new version, and their existing answers are preserved.",
+})
+test({
+  title: "Retire and restore a lesson",
+  tag: "Leader · Lessons",
+  steps: ['Tap "Retire" on a lesson, then later tap "Restore" on it.'],
+  expected:
+    "A retired lesson disappears from members' Lessons page but is never deleted — every member's answers stay intact. Restoring brings it back with its questions and answers unchanged.",
+})
+test({
+  title: "Review and approve lesson answers",
+  tag: "Leader · Lessons",
+  steps: [
+    'On the Lessons page, open "Review lesson responses".',
+    "Find a member's pending response and read their answers beneath each question.",
+    "Approve it (or reject it).",
+  ],
+  expected:
+    "Each response shows the member's name, the questions, and their typed answers. Approving moves it out of 'Awaiting review' into a 'Reviewed' list with an Approved badge. When nothing is waiting, an 'All caught up' message is shown. The admin dashboard's Manage lessons card also shows a count of responses waiting.",
 })
 test({
   title: "Change the Leadership password",
