@@ -1,0 +1,126 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --color-pillar-faith: var(--pillar-faith);
+  --color-pillar-action: var(--pillar-action);
+  --color-pillar-ministry: var(--pillar-ministry);
+  --color-pillar-evangelism: var(--pillar-evangelism);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.9rem;
+
+  /* Cream base */
+  --background: oklch(0.972 0.011 84);
+  --foreground: oklch(0.22 0.004 84);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.004 84);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.004 84);
+
+  /* Black primary */
+  --primary: oklch(0.2 0.004 84);
+  --primary-foreground: oklch(0.98 0.01 84);
+
+  --secondary: oklch(0.95 0.012 84);
+  --secondary-foreground: oklch(0.2 0.004 84);
+
+  --muted: oklch(0.95 0.012 84);
+  --muted-foreground: oklch(0.5 0.006 84);
+
+  /* Gold accent */
+  --accent: oklch(0.79 0.13 80);
+  --accent-foreground: oklch(0.2 0.004 84);
+
+  --destructive: oklch(0.52 0.15 27);
+  --destructive-foreground: oklch(0.98 0.01 84);
+
+  --border: oklch(0.9 0.012 84);
+  --input: oklch(0.9 0.012 84);
+  --ring: oklch(0.79 0.13 80);
+
+  --gold: oklch(0.79 0.13 80);
+  --gold-foreground: oklch(0.18 0.004 84);
+  /* "navy" tokens repurposed as the emblem's black surface */
+  --navy: oklch(0.19 0.004 84);
+  --navy-foreground: oklch(0.97 0.012 84);
+  --success: oklch(0.55 0.09 165);
+  --success-foreground: oklch(0.98 0.01 165);
+  --warning: oklch(0.62 0.14 27);
+  --warning-foreground: oklch(0.98 0.01 27);
+
+  /* F.A.M.E. pillar colors */
+  --pillar-faith: oklch(0.55 0.13 264);
+  --pillar-action: oklch(0.6 0.14 40);
+  --pillar-ministry: oklch(0.55 0.09 165);
+  --pillar-evangelism: oklch(0.62 0.15 20);
+
+  --sidebar: oklch(0.17 0.004 84);
+  --sidebar-foreground: oklch(0.9 0.008 84);
+  --sidebar-accent: oklch(0.26 0.006 84);
+  --sidebar-accent-foreground: oklch(0.98 0.01 84);
+  --sidebar-border: oklch(0.3 0.006 84);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-serif);
+}
