@@ -6,13 +6,13 @@ import {
   BookOpen,
   CalendarClock,
   ClipboardList,
+  GraduationCap,
   HandHeart,
   Home,
   LayoutDashboard,
   ListChecks,
   MessageSquareQuote,
   NotebookPen,
-  ScrollText,
   Sparkles,
   Users,
 } from "lucide-react"
@@ -24,7 +24,7 @@ const memberLinks = [
   { href: "/activities", label: "F.A.M.E. Activities", icon: ListChecks },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/bible-study", label: "Bible Study", icon: BookOpen },
-  { href: "/reading-plan", label: "Reading Plan", icon: ScrollText },
+  { href: "/reading-plan", label: "Lessons", icon: GraduationCap },
   { href: "/confessions", label: "Confessions", icon: Sparkles },
   { href: "/prayer-requests", label: "Prayer Requests", icon: HandHeart },
   { href: "/prayer-schedule", label: "Prayer Schedule", icon: CalendarClock },
@@ -37,6 +37,7 @@ const adminLinks = [
   { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/activities", label: "Activities", icon: ClipboardList },
+  { href: "/admin/lessons", label: "Lessons", icon: GraduationCap },
 ]
 
 export function AppSidebar() {

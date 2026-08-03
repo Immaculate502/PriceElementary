@@ -12,7 +12,7 @@ const links = [
   { href: "/activities", label: "F.A.M.E. Activities" },
   { href: "/journal", label: "Journal" },
   { href: "/bible-study", label: "Bible Study" },
-  { href: "/reading-plan", label: "Reading Plan" },
+  { href: "/reading-plan", label: "Lessons" },
   { href: "/confessions", label: "Confessions" },
   { href: "/prayer-requests", label: "Prayer Requests" },
   { href: "/prayer-schedule", label: "Prayer Schedule" },
@@ -20,6 +20,7 @@ const links = [
   { href: "/admin", label: "Admin Dashboard" },
   { href: "/admin/members", label: "Members" },
   { href: "/admin/activities", label: "Activities" },
+  { href: "/admin/lessons", label: "Lessons" },
 ]
 
 export function MobileNav() {

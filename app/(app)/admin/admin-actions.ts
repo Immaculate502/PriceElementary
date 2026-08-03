@@ -155,6 +155,200 @@ export async function setActivityActive(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Lessons authoring
+// ---------------------------------------------------------------------------
+
+/** Shared validation + auth for lesson create/update. */
+async function readLessonForm(formData: FormData) {
+  if (!(await isAdminUnlocked())) {
+    return { error: "Unlock the leadership area first." as const }
+  }
+  if (!isSupabaseConfigured()) {
+    return { error: "Connect Supabase to manage lessons." as const }
+  }
+
+  const title = String(formData.get("title") ?? "").trim()
+  const summary = String(formData.get("summary") ?? "").trim()
+  const scripture = String(formData.get("scripture") ?? "").trim()
+  const instructions = String(formData.get("instructions") ?? "").trim()
+  const videoPath = String(formData.get("videoPath") ?? "").trim()
+
+  if (!title) return { error: "Give the lesson a title." as const }
+  if (title.length > 160) return { error: "Keep the title under 160 characters." as const }
+  if (summary.length > 500) return { error: "Keep the summary under 500 characters." as const }
+  if (scripture.length > 300) return { error: "Keep scripture references under 300 characters." as const }
+  if (instructions.length > 4000) {
+    return { error: "Keep instructions under 4000 characters." as const }
+  }
+
+  // Questions arrive as repeated "question" fields; blanks are dropped so an
+  // empty row in the editor never becomes a real question.
+  const questions = formData
+    .getAll("question")
+    .map((q) => String(q).trim())
+    .filter(Boolean)
+  if (questions.some((q) => q.length > 500)) {
+    return { error: "Keep each question under 500 characters." as const }
+  }
+  if (questions.length > 20) {
+    return { error: "A lesson can have at most 20 questions." as const }
+  }
+
+  return {
+    values: {
+      title,
+      summary,
+      scripture,
+      instructions,
+      video_path: videoPath || null,
+    },
+    questions,
+  }
+}
+
+/** Replace a lesson's questions with the given prompts (in order). */
+async function replaceQuestions(
+  supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
+  lessonId: string,
+  prompts: string[],
+) {
+  await supabase.from("lesson_questions").delete().eq("lesson_id", lessonId)
+  if (prompts.length === 0) return
+  await supabase.from("lesson_questions").insert(
+    prompts.map((prompt, i) => ({ lesson_id: lessonId, prompt, position: i })),
+  )
+}
+
+export async function createLesson(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  const parsed = await readLessonForm(formData)
+  if ("error" in parsed) return { ok: false, message: parsed.error }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  // Place new lessons at the end of the current ordering.
+  const { data: last } = await supabase
+    .from("lessons")
+    .select("position")
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const position = (last?.position ?? -1) + 1
+
+  const { data: created, error } = await supabase
+    .from("lessons")
+    .insert({ ...parsed.values, position })
+    .select("id")
+    .single()
+  if (error || !created) {
+    return { ok: false, message: error?.message ?? "Could not create the lesson." }
+  }
+
+  await replaceQuestions(supabase, created.id, parsed.questions)
+
+  revalidatePath("/admin/lessons")
+  revalidatePath("/reading-plan")
+  return { ok: true, message: `"${parsed.values.title}" created.` }
+}
+
+export async function updateLesson(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  const id = String(formData.get("lessonId") ?? "")
+  if (!id) return { ok: false, message: "Missing lesson." }
+
+  const parsed = await readLessonForm(formData)
+  if ("error" in parsed) return { ok: false, message: parsed.error }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const { error } = await supabase.from("lessons").update(parsed.values).eq("id", id)
+  if (error) return { ok: false, message: error.message }
+
+  await replaceQuestions(supabase, id, parsed.questions)
+
+  revalidatePath("/admin/lessons")
+  revalidatePath(`/admin/lessons/${id}`)
+  revalidatePath("/reading-plan")
+  revalidatePath(`/reading-plan/${id}`)
+  return { ok: true, message: `"${parsed.values.title}" saved.` }
+}
+
+/**
+ * Retire or restore a lesson. Never deletes: member responses that reference
+ * it must stay intact for review.
+ */
+export async function setLessonActive(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  if (!(await isAdminUnlocked())) {
+    return { ok: false, message: "Unlock the leadership area first." }
+  }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to manage lessons." }
+  }
+
+  const id = String(formData.get("lessonId") ?? "")
+  const active = String(formData.get("active") ?? "") === "true"
+  if (!id) return { ok: false, message: "Missing lesson." }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const { error } = await supabase.from("lessons").update({ active }).eq("id", id)
+  if (error) return { ok: false, message: error.message }
+
+  revalidatePath("/admin/lessons")
+  revalidatePath("/reading-plan")
+  return {
+    ok: true,
+    message: active
+      ? "Lesson restored — members can work through it again."
+      : "Lesson retired. Member responses are unchanged.",
+  }
+}
+
+/** Approve or reject a member's lesson response (leadership review). */
+export async function moderateLessonResponse(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  if (!(await isAdminUnlocked())) {
+    return { ok: false, message: "Unlock the leadership area first." }
+  }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to review responses." }
+  }
+
+  const id = String(formData.get("responseId") ?? "")
+  const status = String(formData.get("status") ?? "")
+  if (!id) return { ok: false, message: "Missing response." }
+  if (status !== "approved" && status !== "rejected") {
+    return { ok: false, message: "Invalid status." }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const memberId = String(formData.get("memberId") ?? "")
+  const { error } = await supabase
+    .from("lesson_responses")
+    .update({ status })
+    .eq("id", id)
+  if (error) return { ok: false, message: error.message }
+
+  revalidatePath("/admin/lessons")
+  if (memberId) revalidatePath(`/admin/members/${memberId}`)
+  return { ok: true, message: `Response ${status}.` }
+}
+
 export async function lockAdmin(): Promise<void> {
   const store = await cookies()
   store.delete(UNLOCK_COOKIE)

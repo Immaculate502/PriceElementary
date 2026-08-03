@@ -57,6 +57,46 @@ export interface ReadingPlanDay {
   completed: boolean
 }
 
+export interface LessonQuestion {
+  id: string
+  prompt: string
+  position: number
+}
+
+export interface Lesson {
+  id: string
+  title: string
+  summary: string
+  scripture: string
+  instructions: string
+  /** Signed, time-limited URL to the teaching video (null when none/expired). */
+  videoUrl: string | null
+  /** Raw storage key, used by leadership when editing. */
+  videoPath: string | null
+  position: number
+  /** Retired lessons are hidden from members but keep member responses intact. */
+  active: boolean
+  questions: LessonQuestion[]
+}
+
+/** A member's single answer to one lesson question. */
+export interface LessonAnswer {
+  questionId: string
+  answer: string
+}
+
+/** A member's full response to a lesson, reviewed like a submission. */
+export interface LessonResponse {
+  id: string
+  lessonId: string
+  memberId: string
+  memberName: string
+  status: SubmissionStatus
+  createdAt: string
+  updatedAt: string
+  answers: LessonAnswer[]
+}
+
 export interface PrayerSlot {
   id: string
   time: string

@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { Clock, Download, FileCheck2, FileText, ListChecks, Users2, Video, ArrowRight } from "lucide-react"
+import { Clock, Download, FileCheck2, FileText, GraduationCap, ListChecks, Users2, Video, ArrowRight } from "lucide-react"
 import { Card, EmptyState, PageHeader, PillarBadge, StatusBadge } from "@/components/ui-kit"
 import { ModerationControls } from "@/components/moderation-controls"
 import { AdminSecurity } from "@/components/admin-security"
-import { getMembers, getSubmissions } from "@/lib/data"
+import { getLessonResponses, getMembers, getSubmissions } from "@/lib/data"
 import type { SubmissionType } from "@/lib/types"
 
 const typeLabels: Record<SubmissionType, string> = {
@@ -25,9 +25,14 @@ function formatDate(iso: string) {
 }
 
 export default async function AdminPage() {
-  const [submissions, members] = await Promise.all([getSubmissions(), getMembers()])
+  const [submissions, members, lessonResponses] = await Promise.all([
+    getSubmissions(),
+    getMembers(),
+    getLessonResponses({ status: "pending" }),
+  ])
   const pending = submissions.filter((s) => s.status === "pending")
   const approved = submissions.filter((s) => s.status === "approved")
+  const pendingLessons = lessonResponses.length
 
   return (
     <div className="flex flex-col gap-8">
@@ -71,7 +76,7 @@ export default async function AdminPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           href="/admin/activities"
           className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -84,6 +89,26 @@ export default async function AdminPage() {
               <p className="font-medium text-foreground">Manage activities</p>
               <p className="flex items-center gap-1 text-sm text-muted-foreground">
                 Add, edit, or retire what members work through
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </p>
+            </div>
+          </Card>
+        </Link>
+
+        <Link
+          href="/admin/lessons"
+          className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Card className="flex h-full items-center gap-4 transition-colors hover:border-gold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pillar-faith/15 text-pillar-faith">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-foreground">Manage lessons</p>
+              <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                {pendingLessons > 0
+                  ? `${pendingLessons} response${pendingLessons === 1 ? "" : "s"} to review`
+                  : "Author lessons and review answers"}
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </p>
             </div>

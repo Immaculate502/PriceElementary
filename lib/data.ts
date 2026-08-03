@@ -10,6 +10,8 @@ import {
   PILLAR_META,
   type Activity,
   type FamePillar,
+  type Lesson,
+  type LessonResponse,
   type Member,
   type Submission,
 } from "./types"
@@ -180,4 +182,127 @@ export async function getActivities(
     frequency: d.frequency ?? "weekly",
     active: d.active ?? true,
   }))
+}
+
+// ---------------------------------------------------------------------------
+// Lessons
+// ---------------------------------------------------------------------------
+
+/**
+ * List lessons with their questions. Members receive only active lessons;
+ * leadership passes `includeInactive` to also see retired ones for management.
+ * A signed video URL (1 hour) is attached when a teaching video exists.
+ */
+export async function getLessons(
+  options?: { includeInactive?: boolean },
+): Promise<Lesson[]> {
+  const includeInactive = options?.includeInactive ?? false
+
+  // No demo fallback: lessons are a real, leader-authored feature. Before
+  // Supabase is configured there simply are none.
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return []
+
+  let query = supabase
+    .from("lessons")
+    .select("*, lesson_questions(*)")
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+
+  if (!includeInactive) query = query.eq("active", true)
+
+  const { data } = await query
+  if (!data) return []
+
+  return Promise.all(
+    data.map(async (d) => {
+      let videoUrl: string | null = null
+      if (d.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("lesson-videos")
+          .createSignedUrl(d.video_path, 60 * 60)
+        videoUrl = signed?.signedUrl ?? null
+      }
+      const questions = (d.lesson_questions ?? [])
+        .map((q: { id: string; prompt: string; position: number }) => ({
+          id: q.id,
+          prompt: q.prompt,
+          position: q.position ?? 0,
+        }))
+        .sort((a, b) => a.position - b.position)
+
+      return {
+        id: d.id,
+        title: d.title,
+        summary: d.summary ?? "",
+        scripture: d.scripture ?? "",
+        instructions: d.instructions ?? "",
+        videoUrl,
+        videoPath: d.video_path ?? null,
+        position: d.position ?? 0,
+        active: d.active ?? true,
+        questions,
+      }
+    }),
+  )
+}
+
+/** A single lesson by id (includes retired ones for leadership editing). */
+export async function getLessonById(id: string): Promise<Lesson | null> {
+  const lessons = await getLessons({ includeInactive: true })
+  return lessons.find((l) => l.id === id) ?? null
+}
+
+/**
+ * All responses for a lesson (leadership review). Includes each member's typed
+ * answers. Ordered newest first.
+ */
+export async function getLessonResponses(filter?: {
+  lessonId?: string
+  memberId?: string
+  status?: Submission["status"]
+}): Promise<LessonResponse[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return []
+
+  let query = supabase
+    .from("lesson_responses")
+    .select("*, lesson_answers(*)")
+    .order("updated_at", { ascending: false })
+
+  if (filter?.lessonId) query = query.eq("lesson_id", filter.lessonId)
+  if (filter?.memberId) query = query.eq("member_id", filter.memberId)
+  if (filter?.status) query = query.eq("status", filter.status)
+
+  const { data } = await query
+  if (!data) return []
+
+  return data.map((d) => ({
+    id: d.id,
+    lessonId: d.lesson_id,
+    memberId: d.member_id,
+    memberName: d.member_name ?? "Member",
+    status: d.status,
+    createdAt: d.created_at,
+    updatedAt: d.updated_at,
+    answers: (d.lesson_answers ?? []).map(
+      (a: { question_id: string; answer: string }) => ({
+        questionId: a.question_id,
+        answer: a.answer ?? "",
+      }),
+    ),
+  }))
+}
+
+/** The current member's own response to a specific lesson, if any. */
+export async function getMyLessonResponse(
+  lessonId: string,
+): Promise<LessonResponse | null> {
+  const member = await getCurrentMember()
+  const responses = await getLessonResponses({ lessonId, memberId: member.id })
+  return responses[0] ?? null
 }

@@ -58,6 +58,87 @@ export async function createSubmission(
   return { ok: true, message: "Submitted for review. Thank you!" }
 }
 
+/**
+ * Submit or update the current member's answers to a lesson. One response per
+ * member per lesson: re-submitting overwrites the answers and resets the
+ * response to "pending" for re-review. Question ids are validated against the
+ * lesson server-side so a tampered form can't attach answers to another lesson.
+ */
+export async function submitLessonResponse(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const lessonId = String(formData.get("lessonId") ?? "").trim()
+  if (!lessonId) return { ok: false, message: "Missing lesson." }
+
+  if (!isSupabaseConfigured()) {
+    return {
+      ok: true,
+      message: "Saved in demo mode. Connect Supabase to persist lesson answers.",
+    }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const member = await getCurrentMember()
+
+  // Load this lesson's real questions so we only accept answers to them.
+  const { data: questions } = await supabase
+    .from("lesson_questions")
+    .select("id")
+    .eq("lesson_id", lessonId)
+  const validIds = new Set((questions ?? []).map((q) => q.id))
+
+  // Collect answers submitted as answer_<questionId> fields.
+  const answers: { question_id: string; answer: string }[] = []
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("answer_")) continue
+    const questionId = key.slice("answer_".length)
+    if (!validIds.has(questionId)) continue // ignore ids not on this lesson
+    const answer = String(value).trim()
+    if (answer.length > 5000) {
+      return { ok: false, message: "Please keep each answer under 5000 characters." }
+    }
+    answers.push({ question_id: questionId, answer })
+  }
+
+  if (answers.length === 0) {
+    return { ok: false, message: "Please answer at least one question before submitting." }
+  }
+
+  // Upsert the response (unique on lesson_id + member_id), resetting to pending.
+  const { data: response, error: respErr } = await supabase
+    .from("lesson_responses")
+    .upsert(
+      {
+        lesson_id: lessonId,
+        member_id: member.id,
+        member_name: member.name,
+        status: "pending",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "lesson_id,member_id" },
+    )
+    .select("id")
+    .single()
+  if (respErr || !response) {
+    return { ok: false, message: `Could not save: ${respErr?.message ?? "unknown error"}` }
+  }
+
+  // Replace prior answers with the new set.
+  await supabase.from("lesson_answers").delete().eq("response_id", response.id)
+  const { error: ansErr } = await supabase.from("lesson_answers").insert(
+    answers.map((a) => ({ response_id: response.id, ...a })),
+  )
+  if (ansErr) return { ok: false, message: `Could not save answers: ${ansErr.message}` }
+
+  revalidatePath("/reading-plan")
+  revalidatePath(`/reading-plan/${lessonId}`)
+  revalidatePath("/admin/lessons")
+  return { ok: true, message: "Your answers were submitted for review. Thank you!" }
+}
+
 export async function moderateSubmission(
   id: string,
   status: "approved" | "rejected",
