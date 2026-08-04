@@ -165,35 +165,56 @@ export async function requestPasswordReset(
   const admin = getSupabaseAdminClient()
 
   if (admin && isEmailConfigured()) {
+    // generateLink needs redirectTo under `options`. Without it the response
+    // still comes back "successful" but omits the token properties, which is
+    // what was silently dropping us into the Supabase-mailer fallback below —
+    // and those links die at /verify with "One-time token not found".
+    const redirectTo = buildRedirect()
+
     const { data, error } = await admin.auth.admin.generateLink({
       type: "recovery",
       email,
+      options: redirectTo ? { redirectTo } : undefined,
     })
 
-    // A missing user still returns an error here — swallow it and show the
-    // generic message so the page can't be used to enumerate members.
-    if (!error && data?.properties?.hashed_token) {
-      const link = buildRedirect({
-        token_hash: data.properties.hashed_token,
-        type: "recovery",
-      })
+    if (error) {
+      // A missing user still returns an error here. Enumeration-safe: log the
+      // real reason server-side, show the member the generic message.
+      console.log("[v0] generateLink error:", error.message)
+      return { ok: true, message: generic }
+    }
 
-      if (link) {
-        const { subject, html, text } = passwordResetEmail(link)
-        const sent = await sendEmail({ to: email, subject, html, text })
+    // Prefer the ready-made action_link Supabase returns (it already points at
+    // our redirectTo via /auth/callback). Fall back to assembling the link from
+    // the hashed token if only that is present.
+    const actionLink = data?.properties?.action_link
+    const hashedToken = data?.properties?.hashed_token
+    const link = actionLink ?? (hashedToken ? buildRedirect({ token_hash: hashedToken, type: "recovery" }) : undefined)
 
-        // Log delivery failures server-side; the member still sees the generic
-        // message rather than a scary error they can't act on.
-        if (!sent.ok) {
-          console.log("[v0] Resend delivery failed:", sent.error)
-        }
-      }
+    if (!link) {
+      console.log("[v0] generateLink returned no usable link:", JSON.stringify(data?.properties ?? {}))
+      return { ok: true, message: generic }
+    }
+
+    const { subject, html, text } = passwordResetEmail(link)
+    const sent = await sendEmail({ to: email, subject, html, text })
+
+    // Log delivery failures server-side; the member still sees the generic
+    // message rather than a scary error they can't act on. The most common
+    // failure is RESEND_FROM_EMAIL using an unverified domain (e.g. a plain
+    // @gmail.com address) — Resend returns 403 and NOTHING is delivered. Fix it
+    // by verifying a domain at resend.com/domains and setting RESEND_FROM_EMAIL
+    // to an address on that domain.
+    if (!sent.ok) {
+      console.log("[v0] Password-reset email NOT sent via Resend:", sent.error)
     }
 
     return { ok: true, message: generic }
   }
 
-  // Fallback: no Resend key configured, so use Supabase's own mailer.
+  // Fallback: no Resend key / service role configured, so use Supabase's own
+  // mailer. Point it explicitly at our callback so the emailed link exchanges a
+  // code for a session instead of dead-ending on Supabase's /verify route.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: buildRedirect(),
   })
