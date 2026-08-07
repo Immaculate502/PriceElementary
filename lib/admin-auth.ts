@@ -7,23 +7,26 @@ import { isSupabaseConfigured, SUPABASE_ANON_KEY } from "./supabase/config"
 /**
  * Admin password gate.
  *
- * The admin area is protected by a password (default `$FordTempo#1535`, or the
- * `ADMIN_PASSWORD` env var) that leadership can change at any time from the
- * admin Security panel.
+ * The admin area is protected by a password that leadership can change at any
+ * time from the admin Security panel. There is deliberately NO hardcoded
+ * default — the password must come from a real secret.
  *
  * Storage of the (hashed) password:
  *   1. Supabase `app_settings` table when the integration is connected — shared
  *      across all leadership devices.
  *   2. Otherwise an httpOnly cookie so a changed password persists for that
  *      browser in demo mode.
- *   3. Falls back to the `ADMIN_PASSWORD` env var / built-in default.
+ *   3. Falls back to the `ADMIN_PASSWORD` env var.
+ *
+ * If none of the three is available the gate stays locked rather than falling
+ * back to a guessable value.
  *
  * "Unlock" sets an httpOnly cookie whose value is an HMAC of the current
  * password hash, so changing the password automatically invalidates old
  * unlock sessions.
  */
 
-const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "$FordTempo#1535"
+const ENV_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim() || ""
 const SECRET =
   process.env.ADMIN_SESSION_SECRET || SUPABASE_ANON_KEY || "fame-dev-secret-change-me"
 
@@ -48,8 +51,12 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb)
 }
 
-/** Resolve the current password hash from the highest-priority available source. */
-export async function getCurrentPasswordHash(): Promise<string> {
+/**
+ * Resolve the current password hash from the highest-priority available source.
+ * Returns null when no password has been configured at all, so callers can
+ * refuse access instead of comparing against a default.
+ */
+export async function getCurrentPasswordHash(): Promise<string | null> {
   if (isSupabaseConfigured()) {
     const supabase = await getSupabaseServerClient()
     if (supabase) {
@@ -66,12 +73,20 @@ export async function getCurrentPasswordHash(): Promise<string> {
   const override = store.get(PW_OVERRIDE_COOKIE)?.value
   if (override) return override
 
-  return hashPassword(DEFAULT_ADMIN_PASSWORD)
+  if (ENV_ADMIN_PASSWORD) return hashPassword(ENV_ADMIN_PASSWORD)
+
+  return null
+}
+
+/** True when leadership still needs to configure an admin password. */
+export async function isAdminPasswordConfigured(): Promise<boolean> {
+  return (await getCurrentPasswordHash()) !== null
 }
 
 export async function verifyAdminPassword(input: string): Promise<boolean> {
   if (!input) return false
   const current = await getCurrentPasswordHash()
+  if (!current) return false
   return safeEqual(hashPassword(input), current)
 }
 
@@ -79,6 +94,7 @@ export async function isAdminUnlocked(): Promise<boolean> {
   const store = await cookies()
   const token = store.get(UNLOCK_COOKIE)?.value
   if (!token) return false
-  const expected = unlockToken(await getCurrentPasswordHash())
-  return safeEqual(token, expected)
+  const current = await getCurrentPasswordHash()
+  if (!current) return false
+  return safeEqual(token, unlockToken(current))
 }

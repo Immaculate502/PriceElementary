@@ -8,6 +8,7 @@ import {
   SESSION_MAX_AGE,
   getCurrentPasswordHash,
   hashPassword,
+  isAdminPasswordConfigured,
   isAdminUnlocked,
   unlockToken,
   verifyAdminPassword,
@@ -24,11 +25,24 @@ export async function unlockAdmin(
   formData: FormData,
 ): Promise<AdminActionResult> {
   const password = String(formData.get("password") ?? "")
+
+  if (!(await isAdminPasswordConfigured())) {
+    return {
+      ok: false,
+      message:
+        "No admin password has been set yet. Add an ADMIN_PASSWORD environment variable to enable the leadership area.",
+    }
+  }
+
   if (!(await verifyAdminPassword(password))) {
     return { ok: false, message: "Incorrect password. Please try again." }
   }
 
   const hash = await getCurrentPasswordHash()
+  if (!hash) {
+    return { ok: false, message: "Admin password is not configured." }
+  }
+
   const store = await cookies()
   store.set(UNLOCK_COOKIE, unlockToken(hash), {
     httpOnly: true,
@@ -45,8 +59,18 @@ export async function unlockAdmin(
 const PILLARS = ["faith", "action", "ministry", "evangelism"] as const
 const FREQUENCIES = ["daily", "weekly", "monthly"] as const
 
+type ActivityValues = {
+  title: string
+  description: string
+  pillar: (typeof PILLARS)[number]
+  frequency: (typeof FREQUENCIES)[number]
+  points: number
+}
+
+type ActivityFormResult = { error: string } | { values: ActivityValues }
+
 /** Shared validation + auth for every activity write. */
-async function readActivityForm(formData: FormData) {
+async function readActivityForm(formData: FormData): Promise<ActivityFormResult> {
   if (!(await isAdminUnlocked())) {
     return { error: "Unlock the leadership area first." as const }
   }
@@ -78,7 +102,15 @@ async function readActivityForm(formData: FormData) {
     return { error: "Points must be a whole number between 0 and 1000." as const }
   }
 
-  return { values: { title, description, pillar, frequency, points } }
+  return {
+    values: {
+      title,
+      description,
+      pillar: pillar as (typeof PILLARS)[number],
+      frequency: frequency as (typeof FREQUENCIES)[number],
+      points,
+    },
+  }
 }
 
 export async function createActivity(
