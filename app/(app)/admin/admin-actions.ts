@@ -8,6 +8,7 @@ import {
   SESSION_MAX_AGE,
   getCurrentPasswordHash,
   hashPassword,
+  isAdminPasswordConfigured,
   isAdminUnlocked,
   unlockToken,
   verifyAdminPassword,
@@ -24,11 +25,24 @@ export async function unlockAdmin(
   formData: FormData,
 ): Promise<AdminActionResult> {
   const password = String(formData.get("password") ?? "")
+
+  if (!(await isAdminPasswordConfigured())) {
+    return {
+      ok: false,
+      message:
+        "No admin password has been set yet. Add an ADMIN_PASSWORD environment variable to enable the leadership area.",
+    }
+  }
+
   if (!(await verifyAdminPassword(password))) {
     return { ok: false, message: "Incorrect password. Please try again." }
   }
 
   const hash = await getCurrentPasswordHash()
+  if (!hash) {
+    return { ok: false, message: "Admin password is not configured." }
+  }
+
   const store = await cookies()
   store.set(UNLOCK_COOKIE, unlockToken(hash), {
     httpOnly: true,
