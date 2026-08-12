@@ -47,10 +47,23 @@ export async function unlockAdmin(
 const PILLARS = ["faith", "action", "ministry", "evangelism"] as const
 const FREQUENCIES = ["daily", "weekly", "monthly"] as const
 
-/** Shared validation + auth for every activity write. */
-async function readActivityForm(formData: FormData) {
+type ActivityFormValues = {
+  title: string
+  description: string
+  pillar: string
+  frequency: string
+  points: number
+}
+
+/**
+ * Shared validation + auth for every activity write.
+ * The explicit union keeps `"error" in parsed` narrowing to a defined string.
+ */
+async function readActivityForm(
+  formData: FormData,
+): Promise<{ error: string } | { values: ActivityFormValues }> {
   if (!(await isAdminUnlocked())) {
-    return { error: "Unlock the leadership area first." as const }
+    return { error: "Sign in to the Leadership Console first." as const }
   }
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to manage activities." as const }
@@ -68,7 +81,7 @@ async function readActivityForm(formData: FormData) {
     return { error: "Keep the description under 500 characters." as const }
   }
   if (!PILLARS.includes(pillar as (typeof PILLARS)[number])) {
-    return { error: "Choose which pillar this belongs to." as const }
+    return { error: "Choose which growth area this belongs to." as const }
   }
   if (!FREQUENCIES.includes(frequency as (typeof FREQUENCIES)[number])) {
     return { error: "Choose how often this happens." as const }
@@ -131,7 +144,7 @@ export async function setActivityActive(
   formData: FormData,
 ): Promise<AdminActionResult> {
   if (!(await isAdminUnlocked())) {
-    return { ok: false, message: "Unlock the leadership area first." }
+    return { ok: false, message: "Sign in to the Leadership Console first." }
   }
   if (!isSupabaseConfigured()) {
     return { ok: false, message: "Connect Supabase to manage activities." }
@@ -161,10 +174,23 @@ export async function setActivityActive(
 // Lessons authoring
 // ---------------------------------------------------------------------------
 
-/** Shared validation + auth for lesson create/update. */
-async function readLessonForm(formData: FormData) {
+type LessonFormValues = {
+  title: string
+  summary: string
+  scripture: string
+  instructions: string
+  video_path: string | null
+}
+
+/**
+ * Shared validation + auth for lesson create/update.
+ * The explicit union keeps `"error" in parsed` narrowing to a defined string.
+ */
+async function readLessonForm(
+  formData: FormData,
+): Promise<{ error: string } | { values: LessonFormValues; questions: string[] }> {
   if (!(await isAdminUnlocked())) {
-    return { error: "Unlock the leadership area first." as const }
+    return { error: "Sign in to the Leadership Console first." as const }
   }
   if (!isSupabaseConfigured()) {
     return { error: "Connect Supabase to manage lessons." as const }
@@ -291,7 +317,7 @@ export async function setLessonActive(
   formData: FormData,
 ): Promise<AdminActionResult> {
   if (!(await isAdminUnlocked())) {
-    return { ok: false, message: "Unlock the leadership area first." }
+    return { ok: false, message: "Sign in to the Leadership Console first." }
   }
   if (!isSupabaseConfigured()) {
     return { ok: false, message: "Connect Supabase to manage lessons." }
@@ -323,7 +349,7 @@ export async function moderateLessonResponse(
   formData: FormData,
 ): Promise<AdminActionResult> {
   if (!(await isAdminUnlocked())) {
-    return { ok: false, message: "Unlock the leadership area first." }
+    return { ok: false, message: "Sign in to the Leadership Console first." }
   }
   if (!isSupabaseConfigured()) {
     return { ok: false, message: "Connect Supabase to review responses." }
@@ -363,7 +389,7 @@ export async function setMemberRole(
   formData: FormData,
 ): Promise<AdminActionResult> {
   if (!(await isAdminUnlocked())) {
-    return { ok: false, message: "Unlock the leadership area first." }
+    return { ok: false, message: "Sign in to the Leadership Console first." }
   }
 
   const memberId = String(formData.get("memberId") ?? "")

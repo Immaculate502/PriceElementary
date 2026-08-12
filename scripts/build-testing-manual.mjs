@@ -1,8 +1,8 @@
 /**
- * Generates the F.A.M.E. functional testing manual as a print-ready PDF.
+ * Generates the ROOTED functional testing manual as a print-ready PDF.
  *
  * Run: node scripts/build-testing-manual.mjs
- * Output: public/fame-testing-manual.pdf
+ * Output: public/rooted-testing-manual.pdf
  *
  * The manual walks a tester through every function of the app with concrete
  * steps, the expected result, and a Pass / Fail / Notes area for each.
@@ -13,13 +13,13 @@ import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT = join(__dirname, "..", "public", "fame-testing-manual.pdf")
+const OUT = join(__dirname, "..", "public", "rooted-testing-manual.pdf")
 mkdirSync(dirname(OUT), { recursive: true })
 
 // ---- Brand palette -------------------------------------------------------
 const GOLD = "#b8892b"
 const GOLD_SOFT = "#f5ecd8"
-const NAVY = "#1b2536"
+const NAVY = "#1a4732"
 const INK = "#20252e"
 const MUTE = "#5b6472"
 const LINE = "#d9dee6"
@@ -189,16 +189,18 @@ function calloutBox(title, lines, color = GOLD) {
 doc.rect(0, 0, PAGE.width, PAGE.height).fill(NAVY)
 doc.rect(0, 300, PAGE.width, 6).fill(GOLD)
 
-// emblem: F.A.M.E. letters in a gold ring
-const cx = PAGE.width / 2
-doc.circle(cx, 190, 62).lineWidth(3).stroke(GOLD)
-doc.font(FB).fontSize(40).fill(GOLD).text("FAME", 0, 168, { width: PAGE.width, align: "center" })
+// The real ROOTED emblem, centred above the gold rule.
+const EMBLEM_SIZE = 150
+doc.image(join(__dirname, "..", "public", "rooted-emblem.png"), (PAGE.width - EMBLEM_SIZE) / 2, 112, {
+  width: EMBLEM_SIZE,
+  height: EMBLEM_SIZE,
+})
 
-doc.font(FB).fontSize(30).fill("#ffffff").text("F.A.M.E.", 0, 340, { width: PAGE.width, align: "center" })
+doc.font(FB).fontSize(30).fill("#ffffff").text("ROOTED", 0, 340, { width: PAGE.width, align: "center" })
 doc
   .font(F)
   .fontSize(13)
-  .fill("#c7cedb")
+  .fill("#cfe0d3")
   .text("Spiritual Growth Portal", 0, 378, { width: PAGE.width, align: "center" })
 
 doc
@@ -209,7 +211,7 @@ doc
 doc
   .font(FO)
   .fontSize(12)
-  .fill("#c7cedb")
+  .fill("#cfe0d3")
   .text("Try and verify every function, one step at a time", 0, 472, {
     width: PAGE.width,
     align: "center",
@@ -230,7 +232,7 @@ doc
 doc.addPage()
 h1("0", "Before you begin")
 para(
-  "This manual lets one person test every function of the F.A.M.E. portal from top to bottom. Work through each numbered test in order, follow the steps, and compare what you see against the expected result. Tick PASS or FAIL and jot any problems in the Notes line so they are easy to report.",
+  "This manual lets one person test every function of the ROOTED portal from top to bottom. Work through each numbered test in order, follow the steps, and compare what you see against the expected result. Tick PASS or FAIL and jot any problems in the Notes line so they are easy to report.",
 )
 calloutBox("What you need to get started", [
   "A phone, tablet, or computer with a web browser.",
@@ -315,17 +317,17 @@ test({
   tag: "Member",
   steps: ["Sign in and view the Dashboard."],
   expected:
-    "You see your day streak, a count of active disciplines, your submission count, the memory verse, the four F.A.M.E. pillars, and a list of recent community activity.",
+    "You see your day streak, a count of active disciplines, your submission count, the memory verse, the four growth areas, and a list of recent community activity.",
 })
 test({
-  title: "Browse F.A.M.E. activities",
+  title: "Browse activities",
   tag: "Member",
   steps: [
-    'Open "F.A.M.E. Activities" from the menu.',
-    "Scroll through the four pillars: Faith, Action, Ministry, Evangelism.",
+    'Open "Activities" from the menu.',
+    "Scroll through the four growth areas: Faith, Action, Ministry, Evangelism.",
   ],
   expected:
-    "Activities are grouped under their pillar, each showing its point value and how often it should be done (daily / weekly / monthly).",
+    "Activities are grouped under their growth area, each showing its point value and how often it should be done (daily / weekly / monthly).",
 })
 test({
   title: "Write a journal entry",
@@ -432,7 +434,7 @@ test({
   tag: "Member",
   steps: ["Open My Profile."],
   expected:
-    "Your name, email, role, join date, and day streak are shown, along with a count of your submissions across each of the four pillars.",
+    "Your name, email, role, join date, and day streak are shown, along with a count of your submissions across each of the four growth areas.",
 })
 
 // ---- Section 3: Review flow ---------------------------------------------
@@ -544,10 +546,10 @@ test({
   steps: [
     'Open "Activities" under Leadership.',
     'Tap "Add activity".',
-    "Enter a name, description, pillar, frequency, and points, then save.",
+    "Enter a name, description, growth area, frequency, and points, then save.",
   ],
   expected:
-    "The new activity appears under its pillar and immediately becomes available to members. Invalid points (e.g. blanks, decimals, or huge numbers) are refused.",
+    "The new activity appears under its growth area and immediately becomes available to members. Invalid points (e.g. blanks, decimals, or huge numbers) are refused.",
 })
 test({
   title: "Edit an activity",
@@ -672,7 +674,7 @@ for (let i = range.start; i < range.start + range.count; i++) {
     .font(F)
     .fontSize(8)
     .fill(MUTE)
-    .text("F.A.M.E. Spiritual Growth Portal — Functional Testing Manual", PAGE.margin, bottom, {
+    .text("ROOTED Spiritual Growth Portal — Functional Testing Manual", PAGE.margin, bottom, {
       width: CONTENT_W - 40,
       align: "left",
       lineBreak: false,

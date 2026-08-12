@@ -132,7 +132,7 @@ export async function getMemberById(id: string): Promise<Member | null> {
 export type PillarProgress = Record<Pillar, number>
 
 /**
- * Count a member's APPROVED submissions per F.A.M.E. pillar. This is the
+ * Count a member's APPROVED submissions per growth area. This is the
  * measure of "progress in each area" shown on the admin roster and detail page.
  */
 export function pillarProgress(submissions: Submission[]): PillarProgress {
@@ -231,7 +231,7 @@ export async function getLessons(
           prompt: q.prompt,
           position: q.position ?? 0,
         }))
-        .sort((a, b) => a.position - b.position)
+        .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
 
       return {
         id: d.id,

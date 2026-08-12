@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { PageHeader } from "@/components/ui-kit"
 import { LessonEditor } from "@/components/lesson-editor"
 import { getLessons } from "@/lib/data"

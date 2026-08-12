@@ -9,7 +9,7 @@ import type {
 export const DEMO_MEMBER: Member = {
   id: "demo-member",
   name: "Grace Adeyemi",
-  email: "grace@fame.community",
+  email: "grace@rooted.community",
   role: "member",
   joinedAt: "2025-01-12",
   avatarColor: "var(--pillar-faith)",
@@ -19,7 +19,7 @@ export const DEMO_MEMBER: Member = {
 export const DEMO_ADMIN: Member = {
   id: "demo-admin",
   name: "Pastor David Okoro",
-  email: "david@fame.community",
+  email: "david@rooted.community",
   role: "admin",
   joinedAt: "2024-06-01",
   avatarColor: "var(--pillar-ministry)",
@@ -34,7 +34,7 @@ export const DEMO_MEMBERS: Member[] = [
   {
     id: "m3",
     name: "Samuel Bright",
-    email: "samuel@fame.community",
+    email: "samuel@rooted.community",
     role: "member",
     joinedAt: "2025-02-03",
     avatarColor: "var(--pillar-action)",
@@ -43,7 +43,7 @@ export const DEMO_MEMBERS: Member[] = [
   {
     id: "m4",
     name: "Naomi Chen",
-    email: "naomi@fame.community",
+    email: "naomi@rooted.community",
     role: "member",
     joinedAt: "2025-03-18",
     avatarColor: "var(--pillar-ministry)",
@@ -52,7 +52,7 @@ export const DEMO_MEMBERS: Member[] = [
   {
     id: "m5",
     name: "Elijah Ford",
-    email: "elijah@fame.community",
+    email: "elijah@rooted.community",
     role: "member",
     joinedAt: "2025-04-22",
     avatarColor: "var(--pillar-evangelism)",
@@ -61,7 +61,7 @@ export const DEMO_MEMBERS: Member[] = [
   {
     id: "m6",
     name: "Ruth Adeyemi",
-    email: "ruth@fame.community",
+    email: "ruth@rooted.community",
     role: "member",
     joinedAt: "2025-01-29",
     avatarColor: "var(--pillar-faith)",
@@ -70,7 +70,7 @@ export const DEMO_MEMBERS: Member[] = [
   {
     id: "m7",
     name: "Peter Nwosu",
-    email: "peter@fame.community",
+    email: "peter@rooted.community",
     role: "member",
     joinedAt: "2025-05-10",
     avatarColor: "var(--pillar-action)",

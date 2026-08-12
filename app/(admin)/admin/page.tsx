@@ -116,7 +116,7 @@ export default async function AdminPage() {
         </Link>
 
         <a
-          href="/fame-testing-manual.pdf"
+          href="/rooted-testing-manual.pdf"
           target="_blank"
           rel="noopener noreferrer"
           download
