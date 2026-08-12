@@ -3,13 +3,17 @@ import { AlertCircle } from "lucide-react"
 import { AuthForm } from "@/components/auth-form"
 import { RootedEmblem } from "@/components/rooted-emblem"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
+import { isOAuthProviderEnabled } from "@/lib/supabase/oauth-status"
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>
 }) {
-  const { error } = await searchParams
+  const [{ error }, googleEnabled] = await Promise.all([
+    searchParams,
+    isOAuthProviderEnabled("google"),
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,7 +45,7 @@ export default async function LoginPage({
         </p>
       )}
 
-      <AuthForm mode="login" />
+      <AuthForm mode="login" googleEnabled={googleEnabled} />
 
       {!isSupabaseConfigured() && (
         <p className="rounded-lg bg-accent/25 px-3 py-2 text-center text-xs text-accent-foreground">
