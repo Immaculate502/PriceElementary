@@ -456,21 +456,40 @@ test({
 // ---- Section 4: Leadership ----------------------------------------------
 h1("4", "Leadership (admin) functions")
 calloutBox(
-  "Set up your leader account first",
+  "The Leadership Console is a separate portal",
   [
-    "Sign up as normal, then unlock Leadership with the password and use 'Make leader' on your own member card.",
+    "Leadership is no longer part of the member menu — members see no trace of it. Reach it by going to the /admin web address directly (bookmark it).",
+    "Two things are required: you must be signed in as a member AND enter the Leadership password.",
+    "Sign up as normal, sign in to the console, then use 'Make leader' on your own member card.",
     "Change the Leadership password after your first sign-in — the starter password should not stay in use.",
   ],
   GOLD,
 )
 test({
-  title: "Unlock the Leadership area",
+  title: "Sign in to the Leadership Console",
   tag: "Leader",
   steps: [
-    "Open Admin Dashboard from the Leadership menu.",
-    "Enter the Leadership password and unlock.",
+    "While signed in as a member, go to the /admin web address.",
+    "On the sign-in screen, enter the Leadership password and tap 'Enter console'.",
   ],
-  expected: "The admin area unlocks and shows leadership tools and pending submissions.",
+  expected:
+    "A standalone sign-in screen appears (marked 'Restricted') with no member sidebar. The correct password opens the console, which has its own dark header and its own menu — Dashboard, Members, Activities, Lessons — plus a 'Back to member portal' link. A wrong password is refused with a clear message.",
+})
+test({
+  title: "Leadership is hidden from members",
+  tag: "Security",
+  steps: [
+    "Sign in as an ordinary member and look through the whole menu (and the mobile menu).",
+  ],
+  expected:
+    "No 'Leadership', 'Admin', 'Members', or 'Activities' management links appear anywhere in the member menu. Members only see member features.",
+})
+test({
+  title: "Lock the console when finished",
+  tag: "Leader",
+  steps: ["In the console header, tap 'Lock console'."],
+  expected:
+    "You are returned to the Leadership sign-in screen and must re-enter the password to get back in. Your member session stays signed in.",
 })
 test({
   title: "Review the admin dashboard",
@@ -594,14 +613,15 @@ test({
     "The new password takes effect. Signing out and unlocking again requires the new password; the old one no longer works.",
 })
 test({
-  title: "Access is blocked without unlocking",
+  title: "Access is blocked without the password",
   tag: "Security",
   steps: [
-    "Sign in as an ordinary member (do not unlock Leadership).",
-    "Try to open an admin page directly.",
+    "Sign in as an ordinary member (do not enter the Leadership password).",
+    "Type an admin web address directly, such as /admin/members or /admin/lessons.",
+    "Then sign out completely and try the same address again.",
   ],
   expected:
-    "You cannot reach or use leadership tools without unlocking. Activity changes cannot be made without the Leadership password.",
+    "While signed in but locked, you are sent to the Leadership sign-in screen instead of the page — no leadership data is shown. While signed out, you are sent to the member login first. No leadership tool can be reached or used without the Leadership password.",
 })
 
 // ---- Section 5: Devices --------------------------------------------------
