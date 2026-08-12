@@ -140,13 +140,15 @@ function OptionsEditor({
               maxLength={300}
               placeholder={`Option ${i + 1}`}
               aria-label={`Question ${questionNumber} option ${i + 1}`}
-              className={inputClass}
+              // min-w-0 lets the input shrink past its intrinsic width so the
+              // row doesn't overflow in a narrow column.
+              className={`${inputClass} min-w-0`}
             />
             <button
               type="button"
               onClick={() => removeOption(i)}
               disabled={draft.options.length <= MIN_OPTIONS}
-              className="rounded p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+              className="shrink-0 rounded p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={`Remove option ${i + 1}`}
             >
               <X className="h-4 w-4" />
