@@ -36,14 +36,20 @@ alter table public.lesson_answers
   add column if not exists selected_option integer;
 `
 
-const connectionString = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
-if (!connectionString) {
+const raw = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL
+if (!raw) {
   console.error("[v0] No POSTGRES_URL available.")
   process.exit(1)
 }
 
+// Supabase terminates TLS with a self-signed chain. A `sslmode` in the URL wins
+// over the client `ssl` option, so drop it and configure TLS explicitly.
+const url = new URL(raw)
+url.searchParams.delete("sslmode")
+url.searchParams.delete("ssl")
+
 const client = new pg.Client({
-  connectionString,
+  connectionString: url.toString(),
   ssl: { rejectUnauthorized: false },
 })
 

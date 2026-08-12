@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, BookOpen } from "lucide-react"
 import { Card, PageHeader, StatusBadge } from "@/components/ui-kit"
 import { LessonResponseForm } from "@/components/lesson-response-form"
+import { gradeResponse } from "@/lib/lesson-grading"
 import { getLessonById, getMyLessonResponse } from "@/lib/data"
 
 export async function generateMetadata({
@@ -30,6 +31,11 @@ export default async function LessonDetailPage({
   if (!lesson || !lesson.active) notFound()
 
   const response = await getMyLessonResponse(lesson.id)
+
+  // Only meaningful once they've actually submitted.
+  const score = response
+    ? gradeResponse(lesson.questions, response.answers)
+    : { correct: 0, total: 0 }
 
   return (
     <div className="flex flex-col gap-8">
@@ -82,6 +88,25 @@ export default async function LessonDetailPage({
           </h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground text-pretty">
             {lesson.instructions}
+          </p>
+        </Card>
+      )}
+
+      {score.total > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Multiple choice score
+            </h2>
+            <p className="text-sm text-muted-foreground text-pretty">
+              {score.correct === score.total
+                ? "Every choice question is correct."
+                : "Review the lesson and update your answers if you'd like."}
+            </p>
+          </div>
+          <p className="font-display text-2xl font-semibold text-foreground">
+            {score.correct}
+            <span className="text-muted-foreground">/{score.total}</span>
           </p>
         </Card>
       )}

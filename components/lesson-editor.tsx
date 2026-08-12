@@ -6,7 +6,6 @@ import {
   AlertCircle,
   CheckCircle2,
   EyeOff,
-  GripVertical,
   Loader2,
   Pencil,
   Plus,
@@ -23,6 +22,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui-kit"
+import { LessonQuestionsField } from "@/components/lesson-questions-field"
 import type { Lesson } from "@/lib/types"
 
 const MAX_VIDEO_BYTES = 200 * 1024 * 1024 // 200 MB (matches the bucket limit)
@@ -174,75 +174,6 @@ function VideoField({ lesson }: { lesson?: Lesson }) {
   )
 }
 
-/** Editable list of question prompts submitted as repeated `question` fields. */
-function QuestionsField({ lesson }: { lesson?: Lesson }) {
-  const [prompts, setPrompts] = useState<string[]>(
-    lesson?.questions.length ? lesson.questions.map((q) => q.prompt) : [""],
-  )
-
-  function update(i: number, value: string) {
-    setPrompts((p) => p.map((v, idx) => (idx === i ? value : v)))
-  }
-  function add() {
-    setPrompts((p) => [...p, ""])
-  }
-  function remove(i: number) {
-    setPrompts((p) => (p.length === 1 ? [""] : p.filter((_, idx) => idx !== i)))
-  }
-
-  return (
-    <div className="grid gap-2">
-      <span className="text-sm font-medium text-foreground">
-        Questions for the member to answer
-      </span>
-      <p className="text-xs text-muted-foreground">
-        Add the questions a member must respond to after watching and reading. Empty rows are
-        ignored.
-      </p>
-      <div className="flex flex-col gap-2">
-        {prompts.map((prompt, i) => (
-          <div key={i} className="flex items-start gap-2">
-            <span
-              className="mt-2.5 text-muted-foreground"
-              aria-hidden="true"
-            >
-              <GripVertical className="h-4 w-4" />
-            </span>
-            <textarea
-              name="question"
-              value={prompt}
-              onChange={(e) => update(i, e.target.value)}
-              rows={2}
-              maxLength={500}
-              placeholder={`Question ${i + 1}`}
-              className={`${inputClass} resize-y leading-relaxed`}
-              aria-label={`Question ${i + 1}`}
-            />
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              className="mt-1.5 rounded p-1.5 text-muted-foreground hover:text-destructive"
-              aria-label={`Remove question ${i + 1}`}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={add}
-        className="w-fit gap-1.5 bg-background"
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        Add question
-      </Button>
-    </div>
-  )
-}
-
 /** Shared title/summary/scripture/instructions/video/questions fields. */
 function LessonFields({ lesson }: { lesson?: Lesson }) {
   const uid = lesson?.id ?? "new"
@@ -309,7 +240,7 @@ function LessonFields({ lesson }: { lesson?: Lesson }) {
       </div>
 
       <VideoField lesson={lesson} />
-      <QuestionsField lesson={lesson} />
+      <LessonQuestionsField lesson={lesson} />
     </div>
   )
 }

@@ -226,11 +226,26 @@ export async function getLessons(
         videoUrl = signed?.signedUrl ?? null
       }
       const questions = (d.lesson_questions ?? [])
-        .map((q: { id: string; prompt: string; position: number }) => ({
-          id: q.id,
-          prompt: q.prompt,
-          position: q.position ?? 0,
-        }))
+        .map(
+          (q: {
+            id: string
+            prompt: string
+            position: number
+            kind: string | null
+            options: unknown
+            correct_option: number | null
+          }) => {
+            const kind = q.kind === "choice" ? "choice" : "open"
+            return {
+              id: q.id,
+              prompt: q.prompt,
+              position: q.position ?? 0,
+              kind,
+              options: kind === "choice" && Array.isArray(q.options) ? (q.options as string[]) : [],
+              correctOption: kind === "choice" ? q.correct_option : null,
+            }
+          },
+        )
         .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
 
       return {
@@ -290,9 +305,10 @@ export async function getLessonResponses(filter?: {
     createdAt: d.created_at,
     updatedAt: d.updated_at,
     answers: (d.lesson_answers ?? []).map(
-      (a: { question_id: string; answer: string }) => ({
+      (a: { question_id: string; answer: string; selected_option: number | null }) => ({
         questionId: a.question_id,
         answer: a.answer ?? "",
+        selectedOption: a.selected_option ?? null,
       }),
     ),
   }))

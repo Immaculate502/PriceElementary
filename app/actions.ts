@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { getCurrentMember } from "@/lib/data"
+import { isAnswered } from "@/lib/lesson-grading"
 import type { Pillar, SubmissionType } from "@/lib/types"
 
 export type ActionResult = { ok: boolean; message: string }
@@ -86,25 +87,73 @@ export async function submitLessonResponse(
   // Load this lesson's real questions so we only accept answers to them.
   const { data: questions } = await supabase
     .from("lesson_questions")
-    .select("id")
+    .select("id, kind, options")
     .eq("lesson_id", lessonId)
-  const validIds = new Set((questions ?? []).map((q) => q.id))
 
-  // Collect answers submitted as answer_<questionId> fields.
-  const answers: { question_id: string; answer: string }[] = []
+  const questionById = new Map(
+    (questions ?? []).map((q) => [
+      q.id as string,
+      {
+        kind: q.kind === "choice" ? ("choice" as const) : ("open" as const),
+        optionCount: Array.isArray(q.options) ? q.options.length : 0,
+      },
+    ]),
+  )
+
+  // Collect answers submitted as answer_<questionId> fields. Choice questions
+  // carry the chosen option index; open questions carry prose.
+  const answers: {
+    question_id: string
+    answer: string
+    selected_option: number | null
+  }[] = []
+
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("answer_")) continue
     const questionId = key.slice("answer_".length)
-    if (!validIds.has(questionId)) continue // ignore ids not on this lesson
-    const answer = String(value).trim()
-    if (answer.length > 5000) {
+    const question = questionById.get(questionId)
+    if (!question) continue // ignore ids not on this lesson
+
+    const raw = String(value).trim()
+
+    if (question.kind === "choice") {
+      if (raw === "") {
+        answers.push({ question_id: questionId, answer: "", selected_option: null })
+        continue
+      }
+      const index = Number(raw)
+      // Reject an index that doesn't point at a real option.
+      if (!Number.isInteger(index) || index < 0 || index >= question.optionCount) {
+        return { ok: false, message: "That answer choice is no longer valid. Please reload." }
+      }
+      answers.push({ question_id: questionId, answer: "", selected_option: index })
+      continue
+    }
+
+    if (raw.length > 5000) {
       return { ok: false, message: "Please keep each answer under 5000 characters." }
     }
-    answers.push({ question_id: questionId, answer })
+    answers.push({ question_id: questionId, answer: raw, selected_option: null })
   }
 
-  if (answers.length === 0) {
-    return { ok: false, message: "Please answer at least one question before submitting." }
+  // Every question must be answered. Enforced here too, not just in the UI.
+  const answerById = new Map(answers.map((a) => [a.question_id, a]))
+  const missing = [...questionById.entries()].filter(
+    ([id, q]) =>
+      !isAnswered(q, {
+        answer: answerById.get(id)?.answer,
+        selectedOption: answerById.get(id)?.selected_option ?? null,
+      }),
+  )
+
+  if (questionById.size === 0) {
+    return { ok: false, message: "This lesson has no questions yet." }
+  }
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      message: `Please answer all ${questionById.size} questions before submitting.`,
+    }
   }
 
   // Upsert the response (unique on lesson_id + member_id), resetting to pending.

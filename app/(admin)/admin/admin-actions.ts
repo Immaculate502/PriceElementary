@@ -15,6 +15,8 @@ import {
 } from "@/lib/admin-auth"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
+import { MAX_OPTIONS, MIN_OPTIONS } from "@/lib/lesson-grading"
+import type { QuestionKind } from "@/lib/types"
 
 export type AdminActionResult = { ok: boolean; message: string }
 
@@ -182,13 +184,22 @@ type LessonFormValues = {
   video_path: string | null
 }
 
+/** One validated question on its way into the database. */
+type QuestionDraft = {
+  id: string | null
+  prompt: string
+  kind: QuestionKind
+  options: string[]
+  correctOption: number | null
+}
+
 /**
  * Shared validation + auth for lesson create/update.
  * The explicit union keeps `"error" in parsed` narrowing to a defined string.
  */
 async function readLessonForm(
   formData: FormData,
-): Promise<{ error: string } | { values: LessonFormValues; questions: string[] }> {
+): Promise<{ error: string } | { values: LessonFormValues; questions: QuestionDraft[] }> {
   if (!(await isAdminUnlocked())) {
     return { error: "Sign in to the Leadership Console first." as const }
   }
@@ -210,18 +221,8 @@ async function readLessonForm(
     return { error: "Keep instructions under 4000 characters." as const }
   }
 
-  // Questions arrive as repeated "question" fields; blanks are dropped so an
-  // empty row in the editor never becomes a real question.
-  const questions = formData
-    .getAll("question")
-    .map((q) => String(q).trim())
-    .filter(Boolean)
-  if (questions.some((q) => q.length > 500)) {
-    return { error: "Keep each question under 500 characters." as const }
-  }
-  if (questions.length > 20) {
-    return { error: "A lesson can have at most 20 questions." as const }
-  }
+  const questions = parseQuestions(formData.get("questions"))
+  if ("error" in questions) return { error: questions.error }
 
   return {
     values: {
@@ -231,21 +232,122 @@ async function readLessonForm(
       instructions,
       video_path: videoPath || null,
     },
-    questions,
+    questions: questions.drafts,
   }
 }
 
-/** Replace a lesson's questions with the given prompts (in order). */
-async function replaceQuestions(
+/**
+ * Validates the questions JSON sent by the editor. Blank rows are ignored, but a
+ * half-filled choice question is an error rather than a silent drop.
+ */
+function parseQuestions(
+  raw: FormDataEntryValue | null,
+): { error: string } | { drafts: QuestionDraft[] } {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(String(raw ?? "[]"))
+  } catch {
+    return { error: "Could not read the questions. Please try again." }
+  }
+  if (!Array.isArray(parsed)) return { error: "Could not read the questions." }
+  if (parsed.length > 20) return { error: "A lesson can have at most 20 questions." }
+
+  const drafts: QuestionDraft[] = []
+
+  for (const entry of parsed) {
+    const row = (entry ?? {}) as Record<string, unknown>
+    const prompt = String(row.prompt ?? "").trim()
+    const kind = row.kind === "choice" ? "choice" : "open"
+    const rawOptions = Array.isArray(row.options) ? row.options.map((o) => String(o).trim()) : []
+    const hasContent = prompt.length > 0 || rawOptions.some(Boolean)
+
+    // A completely untouched row is simply ignored.
+    if (!hasContent) continue
+
+    const label = `Question ${drafts.length + 1}`
+    if (!prompt) return { error: `${label} needs a prompt before it can be saved.` }
+    if (prompt.length > 500) return { error: `${label}: keep the prompt under 500 characters.` }
+
+    const id = typeof row.id === "string" && row.id ? row.id : null
+
+    if (kind === "open") {
+      drafts.push({ id, prompt, kind, options: [], correctOption: null })
+      continue
+    }
+
+    // Drop blank option rows, then re-point the correct answer at its new index.
+    const correctIndex = Number(row.correctOption)
+    const correctText = rawOptions[correctIndex]
+    const options = rawOptions.filter(Boolean)
+
+    if (options.length < MIN_OPTIONS) {
+      return { error: `${label}: add at least ${MIN_OPTIONS} answer options.` }
+    }
+    if (options.length > MAX_OPTIONS) {
+      return { error: `${label}: use at most ${MAX_OPTIONS} answer options.` }
+    }
+    if (options.some((o) => o.length > 300)) {
+      return { error: `${label}: keep each option under 300 characters.` }
+    }
+    if (!correctText) {
+      return { error: `${label}: mark which option is the correct answer.` }
+    }
+
+    const correctOption = rawOptions.slice(0, correctIndex).filter(Boolean).length
+    drafts.push({ id, prompt, kind, options, correctOption })
+  }
+
+  return { drafts }
+}
+
+/**
+ * Syncs a lesson's questions in place.
+ *
+ * Member answers reference `lesson_questions.id` with `on delete cascade`, so a
+ * delete-and-reinsert would erase every existing answer on each save. Instead we
+ * update the questions that survived, insert new ones, and only delete the ones
+ * the leader actually removed.
+ */
+async function syncQuestions(
   supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
   lessonId: string,
-  prompts: string[],
+  drafts: QuestionDraft[],
 ) {
-  await supabase.from("lesson_questions").delete().eq("lesson_id", lessonId)
-  if (prompts.length === 0) return
-  await supabase.from("lesson_questions").insert(
-    prompts.map((prompt, i) => ({ lesson_id: lessonId, prompt, position: i })),
-  )
+  const { data: existingRows } = await supabase
+    .from("lesson_questions")
+    .select("id")
+    .eq("lesson_id", lessonId)
+  const existingIds = new Set((existingRows ?? []).map((r) => r.id as string))
+
+  const keptIds: string[] = []
+
+  for (const [position, draft] of drafts.entries()) {
+    const row = {
+      prompt: draft.prompt,
+      position,
+      kind: draft.kind,
+      options: draft.options,
+      correct_option: draft.correctOption,
+    }
+
+    // Only trust an id that really belongs to this lesson.
+    if (draft.id && existingIds.has(draft.id)) {
+      await supabase.from("lesson_questions").update(row).eq("id", draft.id)
+      keptIds.push(draft.id)
+    } else {
+      const { data: inserted } = await supabase
+        .from("lesson_questions")
+        .insert({ ...row, lesson_id: lessonId })
+        .select("id")
+        .single()
+      if (inserted?.id) keptIds.push(inserted.id as string)
+    }
+  }
+
+  const removed = [...existingIds].filter((id) => !keptIds.includes(id))
+  if (removed.length > 0) {
+    await supabase.from("lesson_questions").delete().in("id", removed)
+  }
 }
 
 export async function createLesson(
@@ -276,7 +378,7 @@ export async function createLesson(
     return { ok: false, message: error?.message ?? "Could not create the lesson." }
   }
 
-  await replaceQuestions(supabase, created.id, parsed.questions)
+  await syncQuestions(supabase, created.id, parsed.questions)
 
   revalidatePath("/admin/lessons")
   revalidatePath("/reading-plan")
@@ -299,7 +401,7 @@ export async function updateLesson(
   const { error } = await supabase.from("lessons").update(parsed.values).eq("id", id)
   if (error) return { ok: false, message: error.message }
 
-  await replaceQuestions(supabase, id, parsed.questions)
+  await syncQuestions(supabase, id, parsed.questions)
 
   revalidatePath("/admin/lessons")
   revalidatePath(`/admin/lessons/${id}`)

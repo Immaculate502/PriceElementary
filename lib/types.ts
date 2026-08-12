@@ -57,10 +57,17 @@ export interface ReadingPlanDay {
   completed: boolean
 }
 
+export type QuestionKind = "open" | "choice"
+
 export interface LessonQuestion {
   id: string
   prompt: string
   position: number
+  kind: QuestionKind
+  /** Answer choices, in display order. Always empty for open questions. */
+  options: string[]
+  /** 0-based index into `options`. Always null for open questions. */
+  correctOption: number | null
 }
 
 export interface Lesson {
@@ -79,10 +86,20 @@ export interface Lesson {
   questions: LessonQuestion[]
 }
 
-/** A member's single answer to one lesson question. */
+/**
+ * A member's single answer to one lesson question. Open questions use `answer`;
+ * choice questions use `selectedOption`.
+ */
 export interface LessonAnswer {
   questionId: string
   answer: string
+  selectedOption: number | null
+}
+
+/** Auto-graded tally of the multiple-choice questions in one response. */
+export interface LessonScore {
+  correct: number
+  total: number
 }
 
 /** A member's full response to a lesson, reviewed like a submission. */

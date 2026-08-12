@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Check, X } from "lucide-react"
 import { Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui-kit"
 import { LessonModerationControls } from "@/components/lesson-moderation-controls"
+import { gradeResponse, isCorrect } from "@/lib/lesson-grading"
 import { getLessons, getLessonResponses } from "@/lib/data"
 import type { Lesson, LessonResponse } from "@/lib/types"
 
@@ -27,7 +28,8 @@ function ResponseCard({
   response: LessonResponse
 }) {
   // Look up each answer by question so we can show them in the lesson's order.
-  const answerByQuestion = new Map(response.answers.map((a) => [a.questionId, a.answer]))
+  const answerByQuestion = new Map(response.answers.map((a) => [a.questionId, a]))
+  const score = gradeResponse(lesson.questions, response.answers)
 
   return (
     <Card className="flex flex-col gap-4">
@@ -38,7 +40,15 @@ function ResponseCard({
             Updated {formatDate(response.updatedAt)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {score.total > 0 && (
+            <span
+              className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground"
+              aria-label={`Scored ${score.correct} out of ${score.total} on multiple choice`}
+            >
+              {score.correct}/{score.total} correct
+            </span>
+          )}
           <StatusBadge status={response.status} />
           <LessonModerationControls
             responseId={response.id}
@@ -49,16 +59,55 @@ function ResponseCard({
 
       <ol className="flex flex-col gap-3">
         {lesson.questions.map((q, i) => {
-          const answer = answerByQuestion.get(q.id)?.trim()
+          const answer = answerByQuestion.get(q.id)
+          const correct = isCorrect(q, answer)
+
           return (
-            <li key={q.id} className="border-l-2 border-border pl-3">
+            <li
+              key={q.id}
+              className={`border-l-2 pl-3 ${
+                correct === true
+                  ? "border-success"
+                  : correct === false
+                    ? "border-destructive"
+                    : "border-border"
+              }`}
+            >
               <p className="text-sm font-medium text-foreground text-pretty">
                 <span className="mr-1.5 text-muted-foreground">{i + 1}.</span>
                 {q.prompt}
               </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground text-pretty">
-                {answer || <span className="italic">No answer provided.</span>}
-              </p>
+
+              {q.kind === "choice" ? (
+                <div className="mt-1 flex flex-col gap-1">
+                  <p className="flex items-start gap-1.5 text-sm leading-relaxed text-pretty">
+                    {correct === true ? (
+                      <Check
+                        className="mt-0.5 h-4 w-4 shrink-0 text-success"
+                        aria-hidden="true"
+                      />
+                    ) : correct === false ? (
+                      <X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+                    ) : null}
+                    <span className="text-muted-foreground">
+                      {typeof answer?.selectedOption === "number" ? (
+                        q.options[answer.selectedOption]
+                      ) : (
+                        <span className="italic">No answer provided.</span>
+                      )}
+                    </span>
+                  </p>
+                  {correct === false && q.correctOption !== null && (
+                    <p className="text-xs text-muted-foreground text-pretty">
+                      Correct answer: {q.options[q.correctOption]}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground text-pretty">
+                  {answer?.answer?.trim() || <span className="italic">No answer provided.</span>}
+                </p>
+              )}
             </li>
           )
         })}
