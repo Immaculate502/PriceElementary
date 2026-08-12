@@ -345,14 +345,47 @@ create table if not exists public.lessons (
 create index if not exists lessons_active_idx on public.lessons (active);
 create index if not exists lessons_position_idx on public.lessons (position);
 
+-- A question is either open-ended (member types prose) or multiple choice
+-- (member picks one of `options`; `correct_option` is the 0-based index of the
+-- right answer, so choice questions can be graded automatically).
 create table if not exists public.lesson_questions (
-  id         uuid primary key default gen_random_uuid(),
-  lesson_id  uuid not null references public.lessons(id) on delete cascade,
-  prompt     text not null,
-  position   integer not null default 0,
-  created_at timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  lesson_id      uuid not null references public.lessons(id) on delete cascade,
+  prompt         text not null,
+  position       integer not null default 0,
+  kind           text not null default 'open',
+  options        jsonb not null default '[]'::jsonb,
+  correct_option integer,
+  created_at     timestamptz not null default now()
 );
 create index if not exists lesson_questions_lesson_id_idx on public.lesson_questions (lesson_id);
+
+-- Added after the first release, so guard each column for existing databases.
+alter table public.lesson_questions
+  add column if not exists kind text not null default 'open';
+alter table public.lesson_questions
+  add column if not exists options jsonb not null default '[]'::jsonb;
+alter table public.lesson_questions
+  add column if not exists correct_option integer;
+
+alter table public.lesson_questions drop constraint if exists lesson_questions_kind_check;
+alter table public.lesson_questions
+  add constraint lesson_questions_kind_check check (kind in ('open', 'choice'));
+
+-- A choice question needs at least two options and a correct answer that points
+-- at one of them; an open question carries neither.
+alter table public.lesson_questions drop constraint if exists lesson_questions_shape_check;
+alter table public.lesson_questions
+  add constraint lesson_questions_shape_check check (
+    (kind = 'open' and correct_option is null)
+    or (
+      kind = 'choice'
+      and jsonb_typeof(options) = 'array'
+      and jsonb_array_length(options) between 2 and 8
+      and correct_option >= 0
+      and correct_option < jsonb_array_length(options)
+    )
+  );
 
 create table if not exists public.lesson_responses (
   id          uuid primary key default gen_random_uuid(),
@@ -368,14 +401,19 @@ create index if not exists lesson_responses_lesson_id_idx on public.lesson_respo
 create index if not exists lesson_responses_member_id_idx on public.lesson_responses (member_id);
 create index if not exists lesson_responses_status_idx on public.lesson_responses (status);
 
+-- `answer` holds prose for open questions; `selected_option` holds the chosen
+-- 0-based index for choice questions. Exactly one is meaningful per row.
 create table if not exists public.lesson_answers (
-  id          uuid primary key default gen_random_uuid(),
-  response_id uuid not null references public.lesson_responses(id) on delete cascade,
-  question_id uuid not null references public.lesson_questions(id) on delete cascade,
-  answer      text not null default '',
-  created_at  timestamptz not null default now(),
+  id              uuid primary key default gen_random_uuid(),
+  response_id     uuid not null references public.lesson_responses(id) on delete cascade,
+  question_id     uuid not null references public.lesson_questions(id) on delete cascade,
+  answer          text not null default '',
+  selected_option integer,
+  created_at      timestamptz not null default now(),
   unique (response_id, question_id)
 );
+alter table public.lesson_answers
+  add column if not exists selected_option integer;
 create index if not exists lesson_answers_response_id_idx on public.lesson_answers (response_id);
 
 alter table public.lessons enable row level security;
