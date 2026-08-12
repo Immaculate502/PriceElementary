@@ -17,13 +17,15 @@ export default async function AdminVocalPage() {
         action={
           <div className="flex gap-6">
             <div className="text-right">
-              <p className="font-display text-2xl font-semibold text-warning">
+              {/* font-sans: the display serif renders lining figures as small
+                  roman-numeral-like glyphs, which reads wrong for a counter. */}
+              <p className="font-sans text-2xl font-semibold tabular-nums text-warning">
                 {unreviewed.length}
               </p>
               <p className="text-xs text-muted-foreground">Awaiting review</p>
             </div>
             <div className="text-right">
-              <p className="font-display text-2xl font-semibold text-foreground">
+              <p className="font-sans text-2xl font-semibold tabular-nums text-foreground">
                 {videos.length}
               </p>
               <p className="text-xs text-muted-foreground">Total</p>
@@ -43,7 +45,7 @@ export default async function AdminVocalPage() {
             <h2 className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
               <Mic className="h-5 w-5 text-gold" aria-hidden="true" />
               Needs review
-              <span className="text-sm font-normal text-muted-foreground">
+              <span className="font-sans text-sm font-normal tabular-nums text-muted-foreground">
                 {unreviewed.length}
               </span>
             </h2>
@@ -64,9 +66,9 @@ export default async function AdminVocalPage() {
 
           {reviewed.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="font-display text-xl font-semibold text-foreground">
+              <h2 className="flex items-center gap-2 font-display text-xl font-semibold text-foreground">
                 Reviewed
-                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                <span className="font-sans text-sm font-normal tabular-nums text-muted-foreground">
                   {reviewed.length}
                 </span>
               </h2>

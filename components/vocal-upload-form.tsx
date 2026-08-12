@@ -112,7 +112,7 @@ export function VocalUploadForm() {
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="videoPath" value={videoPath} />
 
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2 [&>*]:min-w-0">
         <label htmlFor="vocal-title" className="text-sm font-medium text-foreground">
           Title
         </label>
@@ -126,7 +126,7 @@ export function VocalUploadForm() {
         />
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2 [&>*]:min-w-0">
         <label htmlFor="vocal-note" className="text-sm font-medium text-foreground">
           Note <span className="font-normal text-muted-foreground">(optional)</span>
         </label>
@@ -140,7 +140,7 @@ export function VocalUploadForm() {
         />
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2 [&>*]:min-w-0">
         <span className="text-sm font-medium text-foreground">Your recording</span>
 
         {videoPath ? (

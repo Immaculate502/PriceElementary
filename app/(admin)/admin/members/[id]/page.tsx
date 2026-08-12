@@ -140,7 +140,7 @@ export default async function MemberDetailPage({
           <Mic className="h-5 w-5 text-gold" aria-hidden="true" />
           VOCAL recordings
           {vocalVideos.length > 0 && (
-            <span className="text-sm font-normal text-muted-foreground">
+            <span className="font-sans tabular-nums text-sm font-normal text-muted-foreground">
               {vocalVideos.length}
               {unreviewedVocal > 0 && ` · ${unreviewedVocal} new`}
             </span>
