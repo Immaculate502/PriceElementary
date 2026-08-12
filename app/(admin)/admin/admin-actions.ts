@@ -14,6 +14,7 @@ import {
   verifyAdminPassword,
 } from "@/lib/admin-auth"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { MAX_OPTIONS, MIN_OPTIONS } from "@/lib/lesson-grading"
 import type { QuestionKind } from "@/lib/types"
@@ -571,7 +572,14 @@ export async function changeAdminPassword(
   const store = await cookies()
 
   if (isSupabaseConfigured()) {
-    const supabase = await getSupabaseServerClient()
+    // Knowing the current password is the authorization boundary here — it was
+    // verified above — so write with the service-role client. `app_settings` is
+    // RLS-restricted to `is_admin()`, and the password gate exists precisely so
+    // leadership can administer the console without every member profile being
+    // promoted to admin. Using the caller's client would fail the RLS check and
+    // leave the password unchangeable from the UI.
+    const privileged = getSupabaseAdminClient()
+    const supabase = privileged ?? (await getSupabaseServerClient())
     if (!supabase) return { ok: false, message: "Supabase client unavailable." }
     const { error } = await supabase
       .from("app_settings")
