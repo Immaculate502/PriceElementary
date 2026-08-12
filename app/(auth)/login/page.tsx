@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { AlertCircle } from "lucide-react"
 import { AuthForm } from "@/components/auth-form"
+import { RootedEmblem } from "@/components/rooted-emblem"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 
 export default async function LoginPage({
@@ -13,10 +14,10 @@ export default async function LoginPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy text-navy-foreground font-display text-lg font-bold">
-          F
-        </div>
-        <span className="font-display text-xl font-semibold text-foreground">F.A.M.E.</span>
+        <RootedEmblem size={40} priority />
+        <span className="font-display text-xl font-semibold tracking-wide text-foreground">
+          ROOTED
+        </span>
       </div>
 
       <div>

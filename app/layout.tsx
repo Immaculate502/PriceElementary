@@ -18,18 +18,19 @@ const cormorant = Cormorant_Garamond({
 })
 
 export const metadata: Metadata = {
-  title: "F.A.M.E. — Faith, Action, Ministry, Evangelism",
+  title: "ROOTED — Faith, Action, Ministry, Evangelism",
   description:
-    "A spiritual development portal for growing in Faith, Action, Ministry, and Evangelism. Track disciplines, journal, submit prayer requests, and share testimonies.",
+    "A spiritual development portal for growing deep roots in Faith, Action, Ministry, and Evangelism. Track disciplines, work through lessons, journal, submit prayer requests, and share testimonies.",
   generator: "v0.app",
   icons: {
-    icon: "/fame-emblem.png",
-    apple: "/fame-emblem.png",
+    icon: "/rooted-icon.png",
+    apple: "/rooted-icon.png",
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  // Matches the deep forest green of the ROOTED emblem.
+  themeColor: "#1a4732",
 }
 
 export default function RootLayout({

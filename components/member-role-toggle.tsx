@@ -3,7 +3,7 @@
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { AlertCircle, CheckCircle2, ShieldCheck, ShieldMinus } from "lucide-react"
-import { setMemberRole, type AdminActionResult } from "@/app/(app)/admin/admin-actions"
+import { setMemberRole, type AdminActionResult } from "@/app/(admin)/admin/admin-actions"
 import { Button } from "@/components/ui/button"
 
 function ToggleButton({ isAdmin }: { isAdmin: boolean }) {

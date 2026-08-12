@@ -9,12 +9,15 @@ import {
 import {
   PILLAR_META,
   type Activity,
-  type FamePillar,
+  type Pillar,
+  type Lesson,
+  type LessonResponse,
   type Member,
   type Submission,
+  type VocalVideo,
 } from "./types"
 
-const PILLAR_KEYS = Object.keys(PILLAR_META) as FamePillar[]
+const PILLAR_KEYS = Object.keys(PILLAR_META) as Pillar[]
 
 /**
  * Data-access layer.
@@ -127,10 +130,10 @@ export async function getMemberById(id: string): Promise<Member | null> {
   return members.find((m) => m.id === id) ?? null
 }
 
-export type PillarProgress = Record<FamePillar, number>
+export type PillarProgress = Record<Pillar, number>
 
 /**
- * Count a member's APPROVED submissions per F.A.M.E. pillar. This is the
+ * Count a member's APPROVED submissions per growth area. This is the
  * measure of "progress in each area" shown on the admin roster and detail page.
  */
 export function pillarProgress(submissions: Submission[]): PillarProgress {
@@ -180,4 +183,225 @@ export async function getActivities(
     frequency: d.frequency ?? "weekly",
     active: d.active ?? true,
   }))
+}
+
+// ---------------------------------------------------------------------------
+// Lessons
+// ---------------------------------------------------------------------------
+
+/**
+ * List lessons with their questions. Members receive only active lessons;
+ * leadership passes `includeInactive` to also see retired ones for management.
+ * A signed video URL (1 hour) is attached when a teaching video exists.
+ */
+export async function getLessons(
+  options?: { includeInactive?: boolean },
+): Promise<Lesson[]> {
+  const includeInactive = options?.includeInactive ?? false
+
+  // No demo fallback: lessons are a real, leader-authored feature. Before
+  // Supabase is configured there simply are none.
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return []
+
+  let query = supabase
+    .from("lessons")
+    .select("*, lesson_questions(*)")
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+
+  if (!includeInactive) query = query.eq("active", true)
+
+  const { data } = await query
+  if (!data) return []
+
+  return Promise.all(
+    data.map(async (d) => {
+      let videoUrl: string | null = null
+      if (d.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("lesson-videos")
+          .createSignedUrl(d.video_path, 60 * 60)
+        videoUrl = signed?.signedUrl ?? null
+      }
+      const questions = (d.lesson_questions ?? [])
+        .map(
+          (q: {
+            id: string
+            prompt: string
+            position: number
+            kind: string | null
+            options: unknown
+            correct_option: number | null
+          }) => {
+            const kind = q.kind === "choice" ? "choice" : "open"
+            return {
+              id: q.id,
+              prompt: q.prompt,
+              position: q.position ?? 0,
+              kind,
+              options: kind === "choice" && Array.isArray(q.options) ? (q.options as string[]) : [],
+              correctOption: kind === "choice" ? q.correct_option : null,
+            }
+          },
+        )
+        .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+
+      return {
+        id: d.id,
+        title: d.title,
+        summary: d.summary ?? "",
+        scripture: d.scripture ?? "",
+        instructions: d.instructions ?? "",
+        videoUrl,
+        videoPath: d.video_path ?? null,
+        position: d.position ?? 0,
+        active: d.active ?? true,
+        questions,
+      }
+    }),
+  )
+}
+
+/** A single lesson by id (includes retired ones for leadership editing). */
+export async function getLessonById(id: string): Promise<Lesson | null> {
+  const lessons = await getLessons({ includeInactive: true })
+  return lessons.find((l) => l.id === id) ?? null
+}
+
+/**
+ * All responses for a lesson (leadership review). Includes each member's typed
+ * answers. Ordered newest first.
+ */
+export async function getLessonResponses(filter?: {
+  lessonId?: string
+  memberId?: string
+  status?: Submission["status"]
+}): Promise<LessonResponse[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return []
+
+  let query = supabase
+    .from("lesson_responses")
+    .select("*, lesson_answers(*)")
+    .order("updated_at", { ascending: false })
+
+  if (filter?.lessonId) query = query.eq("lesson_id", filter.lessonId)
+  if (filter?.memberId) query = query.eq("member_id", filter.memberId)
+  if (filter?.status) query = query.eq("status", filter.status)
+
+  const { data } = await query
+  if (!data) return []
+
+  return data.map((d) => ({
+    id: d.id,
+    lessonId: d.lesson_id,
+    memberId: d.member_id,
+    memberName: d.member_name ?? "Member",
+    status: d.status,
+    createdAt: d.created_at,
+    updatedAt: d.updated_at,
+    answers: (d.lesson_answers ?? []).map(
+      (a: { question_id: string; answer: string; selected_option: number | null }) => ({
+        questionId: a.question_id,
+        answer: a.answer ?? "",
+        selectedOption: a.selected_option ?? null,
+      }),
+    ),
+  }))
+}
+
+/** The current member's own response to a specific lesson, if any. */
+export async function getMyLessonResponse(
+  lessonId: string,
+): Promise<LessonResponse | null> {
+  const member = await getCurrentMember()
+  const responses = await getLessonResponses({ lessonId, memberId: member.id })
+  return responses[0] ?? null
+}
+
+// ---------------------------------------------------------------------------
+// VOCAL video journal
+// ---------------------------------------------------------------------------
+
+/**
+ * VOCAL entries, newest first, each with a 1-hour signed playback URL.
+ *
+ * Two distinct read paths, because the console's identity model differs from
+ * the database's:
+ *
+ * - Members (default) read through their own session, so RLS narrows the rows
+ *   to videos they own.
+ * - Leadership (`forLeadership`) reads with the service-role client. The console
+ *   is gated by the shared administrator password, NOT by a `role = 'admin'`
+ *   profile, so `is_admin()` can be false for a legitimate leader and RLS would
+ *   silently hide every member's video. Unlocking the console is the
+ *   authorization check, and it is verified here before the privileged read.
+ *
+ * No demo fallback: VOCAL is member-authored, so before Supabase there are none.
+ */
+export async function getVocalVideos(options?: {
+  memberId?: string
+  forLeadership?: boolean
+}): Promise<VocalVideo[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const forLeadership = options?.forLeadership ?? false
+
+  let supabase
+  if (forLeadership) {
+    // Imported lazily so the member pages never pull in cookie-reading
+    // admin-auth or the service-role client.
+    const [{ isAdminUnlocked }, { getSupabaseAdminClient }] = await Promise.all([
+      import("./admin-auth"),
+      import("./supabase/admin"),
+    ])
+    if (!(await isAdminUnlocked())) return []
+    supabase = getSupabaseAdminClient() ?? (await getSupabaseServerClient())
+  } else {
+    supabase = await getSupabaseServerClient()
+  }
+  if (!supabase) return []
+
+  let query = supabase
+    .from("vocal_videos")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (options?.memberId) query = query.eq("member_id", options.memberId)
+
+  const { data } = await query
+  if (!data) return []
+
+  return Promise.all(
+    data.map(async (d) => {
+      let videoUrl: string | null = null
+      if (d.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("vocal-videos")
+          .createSignedUrl(d.video_path, 60 * 60) // 1 hour
+        videoUrl = signed?.signedUrl ?? null
+      }
+      return {
+        id: d.id,
+        memberId: d.member_id,
+        memberName: d.member_name ?? "Member",
+        title: d.title,
+        note: d.note ?? "",
+        videoUrl,
+        reviewedAt: d.reviewed_at ?? null,
+        createdAt: d.created_at,
+      }
+    }),
+  )
+}
+
+/** The signed-in member's own VOCAL entries. */
+export async function getMyVocalVideos(): Promise<VocalVideo[]> {
+  const member = await getCurrentMember()
+  return getVocalVideos({ memberId: member.id })
 }

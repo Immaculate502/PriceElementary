@@ -1,8 +1,8 @@
 /**
- * Generates the F.A.M.E. functional testing manual as a print-ready PDF.
+ * Generates the ROOTED functional testing manual as a print-ready PDF.
  *
  * Run: node scripts/build-testing-manual.mjs
- * Output: public/fame-testing-manual.pdf
+ * Output: public/rooted-testing-manual.pdf
  *
  * The manual walks a tester through every function of the app with concrete
  * steps, the expected result, and a Pass / Fail / Notes area for each.
@@ -13,13 +13,13 @@ import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT = join(__dirname, "..", "public", "fame-testing-manual.pdf")
+const OUT = join(__dirname, "..", "public", "rooted-testing-manual.pdf")
 mkdirSync(dirname(OUT), { recursive: true })
 
 // ---- Brand palette -------------------------------------------------------
 const GOLD = "#b8892b"
 const GOLD_SOFT = "#f5ecd8"
-const NAVY = "#1b2536"
+const NAVY = "#1a4732"
 const INK = "#20252e"
 const MUTE = "#5b6472"
 const LINE = "#d9dee6"
@@ -189,16 +189,18 @@ function calloutBox(title, lines, color = GOLD) {
 doc.rect(0, 0, PAGE.width, PAGE.height).fill(NAVY)
 doc.rect(0, 300, PAGE.width, 6).fill(GOLD)
 
-// emblem: F.A.M.E. letters in a gold ring
-const cx = PAGE.width / 2
-doc.circle(cx, 190, 62).lineWidth(3).stroke(GOLD)
-doc.font(FB).fontSize(40).fill(GOLD).text("FAME", 0, 168, { width: PAGE.width, align: "center" })
+// The real ROOTED emblem, centred above the gold rule.
+const EMBLEM_SIZE = 150
+doc.image(join(__dirname, "..", "public", "rooted-emblem.png"), (PAGE.width - EMBLEM_SIZE) / 2, 112, {
+  width: EMBLEM_SIZE,
+  height: EMBLEM_SIZE,
+})
 
-doc.font(FB).fontSize(30).fill("#ffffff").text("F.A.M.E.", 0, 340, { width: PAGE.width, align: "center" })
+doc.font(FB).fontSize(30).fill("#ffffff").text("ROOTED", 0, 340, { width: PAGE.width, align: "center" })
 doc
   .font(F)
   .fontSize(13)
-  .fill("#c7cedb")
+  .fill("#cfe0d3")
   .text("Spiritual Growth Portal", 0, 378, { width: PAGE.width, align: "center" })
 
 doc
@@ -209,7 +211,7 @@ doc
 doc
   .font(FO)
   .fontSize(12)
-  .fill("#c7cedb")
+  .fill("#cfe0d3")
   .text("Try and verify every function, one step at a time", 0, 472, {
     width: PAGE.width,
     align: "center",
@@ -230,7 +232,7 @@ doc
 doc.addPage()
 h1("0", "Before you begin")
 para(
-  "This manual lets one person test every function of the F.A.M.E. portal from top to bottom. Work through each numbered test in order, follow the steps, and compare what you see against the expected result. Tick PASS or FAIL and jot any problems in the Notes line so they are easy to report.",
+  "This manual lets one person test every function of the ROOTED portal from top to bottom. Work through each numbered test in order, follow the steps, and compare what you see against the expected result. Tick PASS or FAIL and jot any problems in the Notes line so they are easy to report.",
 )
 calloutBox("What you need to get started", [
   "A phone, tablet, or computer with a web browser.",
@@ -315,17 +317,17 @@ test({
   tag: "Member",
   steps: ["Sign in and view the Dashboard."],
   expected:
-    "You see your day streak, a count of active disciplines, your submission count, the memory verse, the four F.A.M.E. pillars, and a list of recent community activity.",
+    "You see your day streak, a count of active disciplines, your submission count, the memory verse, the four growth areas, and a list of recent community activity.",
 })
 test({
-  title: "Browse F.A.M.E. activities",
+  title: "Browse activities",
   tag: "Member",
   steps: [
-    'Open "F.A.M.E. Activities" from the menu.',
-    "Scroll through the four pillars: Faith, Action, Ministry, Evangelism.",
+    'Open "Activities" from the menu.',
+    "Scroll through the four growth areas: Faith, Action, Ministry, Evangelism.",
   ],
   expected:
-    "Activities are grouped under their pillar, each showing its point value and how often it should be done (daily / weekly / monthly).",
+    "Activities are grouped under their growth area, each showing its point value and how often it should be done (daily / weekly / monthly).",
 })
 test({
   title: "Write a journal entry",
@@ -345,10 +347,46 @@ test({
   expected: "The reflection is saved and enters the review queue for leadership.",
 })
 test({
-  title: "View the reading plan",
-  tag: "Member",
-  steps: ["Open Reading Plan."],
-  expected: "A structured reading plan is displayed for members to follow.",
+  title: "Browse the Lessons list",
+  tag: "Member · Lessons",
+  steps: ['Open "Lessons" from the menu.'],
+  expected:
+    "Every lesson a leader has published is listed as a card showing its title, a short summary, its scripture reference, and how many questions it asks. Retired lessons do not appear.",
+})
+test({
+  title: "Open a lesson and read it",
+  tag: "Member · Lessons",
+  steps: ["From the Lessons list, tap a lesson to open it."],
+  expected:
+    "The lesson opens showing (in order) the teaching video if one was added, a 'Scripture to read' card, a 'Reading instructions' card, and a 'Your answers' section listing each question with a text box beneath it.",
+})
+test({
+  title: "Watch the teaching video",
+  tag: "Member · Lessons · Video",
+  steps: ["On a lesson that has a video, press play."],
+  expected:
+    "The teaching video plays inside the lesson. Lessons without a video simply omit the video block — nothing looks broken.",
+})
+test({
+  title: "Answer the questions and submit",
+  tag: "Member · Lessons",
+  steps: [
+    "In the 'Your answers' section, type an answer into each question's box.",
+    'Tap "Submit for review".',
+  ],
+  expected:
+    "Your answers are saved, a confirmation message appears, and the lesson now shows a 'Pending' status. Submitting with every box empty is refused with a clear message.",
+})
+test({
+  title: "Reopen and update your answers",
+  tag: "Member · Lessons",
+  steps: [
+    "Return to a lesson you already submitted.",
+    "Change one of your answers.",
+    'Tap "Update my answers".',
+  ],
+  expected:
+    "Your previous answers are pre-filled so you can edit them. After updating, the button reads 'Update my answers' (not 'Submit'), and the response returns to 'Pending' for the leader to review again.",
 })
 test({
   title: "Record a confession",
@@ -396,7 +434,7 @@ test({
   tag: "Member",
   steps: ["Open My Profile."],
   expected:
-    "Your name, email, role, join date, and day streak are shown, along with a count of your submissions across each of the four pillars.",
+    "Your name, email, role, join date, and day streak are shown, along with a count of your submissions across each of the four growth areas.",
 })
 
 // ---- Section 3: Review flow ---------------------------------------------
@@ -420,28 +458,47 @@ test({
 // ---- Section 4: Leadership ----------------------------------------------
 h1("4", "Leadership (admin) functions")
 calloutBox(
-  "Set up your leader account first",
+  "The Leadership Console is a separate portal",
   [
-    "Sign up as normal, then unlock Leadership with the password and use 'Make leader' on your own member card.",
+    "Leadership is no longer part of the member menu — members see no trace of it. Reach it by going to the /admin web address directly (bookmark it).",
+    "Two things are required: you must be signed in as a member AND enter the Leadership password.",
+    "Sign up as normal, sign in to the console, then use 'Make leader' on your own member card.",
     "Change the Leadership password after your first sign-in — the starter password should not stay in use.",
   ],
   GOLD,
 )
 test({
-  title: "Unlock the Leadership area",
+  title: "Sign in to the Leadership Console",
   tag: "Leader",
   steps: [
-    "Open Admin Dashboard from the Leadership menu.",
-    "Enter the Leadership password and unlock.",
+    "While signed in as a member, go to the /admin web address.",
+    "On the sign-in screen, enter the Leadership password and tap 'Enter console'.",
   ],
-  expected: "The admin area unlocks and shows leadership tools and pending submissions.",
+  expected:
+    "A standalone sign-in screen appears (marked 'Restricted') with no member sidebar. The correct password opens the console, which has its own dark header and its own menu — Dashboard, Members, Activities, Lessons — plus a 'Back to member portal' link. A wrong password is refused with a clear message.",
+})
+test({
+  title: "Leadership is hidden from members",
+  tag: "Security",
+  steps: [
+    "Sign in as an ordinary member and look through the whole menu (and the mobile menu).",
+  ],
+  expected:
+    "No 'Leadership', 'Admin', 'Members', or 'Activities' management links appear anywhere in the member menu. Members only see member features.",
+})
+test({
+  title: "Lock the console when finished",
+  tag: "Leader",
+  steps: ["In the console header, tap 'Lock console'."],
+  expected:
+    "You are returned to the Leadership sign-in screen and must re-enter the password to get back in. Your member session stays signed in.",
 })
 test({
   title: "Review the admin dashboard",
   tag: "Leader",
   steps: ["With Leadership unlocked, view the Admin Dashboard."],
   expected:
-    "You see community statistics and a list of submissions awaiting review, plus a shortcut to manage activities.",
+    "You see community statistics and a list of submissions awaiting review, plus shortcut cards to manage activities, manage lessons (with a count of responses waiting), and download this testing manual as a PDF.",
 })
 test({
   title: "View the members list",
@@ -489,10 +546,10 @@ test({
   steps: [
     'Open "Activities" under Leadership.',
     'Tap "Add activity".',
-    "Enter a name, description, pillar, frequency, and points, then save.",
+    "Enter a name, description, growth area, frequency, and points, then save.",
   ],
   expected:
-    "The new activity appears under its pillar and immediately becomes available to members. Invalid points (e.g. blanks, decimals, or huge numbers) are refused.",
+    "The new activity appears under its growth area and immediately becomes available to members. Invalid points (e.g. blanks, decimals, or huge numbers) are refused.",
 })
 test({
   title: "Edit an activity",
@@ -514,6 +571,43 @@ test({
   expected: "The activity becomes active again and returns to members' lists with its settings intact.",
 })
 test({
+  title: "Create a lesson with a video and questions",
+  tag: "Leader · Lessons",
+  steps: [
+    'Open "Lessons" under Leadership, then tap "Add lesson".',
+    "Enter a title, summary, scripture reference, and reading instructions.",
+    "Optionally upload a teaching video from your device.",
+    'Add one or more questions using "Add question", then save.',
+  ],
+  expected:
+    "The lesson is created and appears in the leader's lesson list, and immediately becomes available to members on the Lessons page. Note: creating lessons requires an admin/leader role, not just the Leadership password.",
+})
+test({
+  title: "Edit a lesson",
+  tag: "Leader · Lessons",
+  steps: ['On the Lessons page, tap "Edit" on a lesson.', "Change its wording or questions and save."],
+  expected:
+    "The lesson shows your updated content. Members see the new version, and their existing answers are preserved.",
+})
+test({
+  title: "Retire and restore a lesson",
+  tag: "Leader · Lessons",
+  steps: ['Tap "Retire" on a lesson, then later tap "Restore" on it.'],
+  expected:
+    "A retired lesson disappears from members' Lessons page but is never deleted — every member's answers stay intact. Restoring brings it back with its questions and answers unchanged.",
+})
+test({
+  title: "Review and approve lesson answers",
+  tag: "Leader · Lessons",
+  steps: [
+    'On the Lessons page, open "Review lesson responses".',
+    "Find a member's pending response and read their answers beneath each question.",
+    "Approve it (or reject it).",
+  ],
+  expected:
+    "Each response shows the member's name, the questions, and their typed answers. Approving moves it out of 'Awaiting review' into a 'Reviewed' list with an Approved badge. When nothing is waiting, an 'All caught up' message is shown. The admin dashboard's Manage lessons card also shows a count of responses waiting.",
+})
+test({
   title: "Change the Leadership password",
   tag: "Leader",
   steps: ["In the Leadership area, open the password change control.", "Set a new password and save."],
@@ -521,14 +615,15 @@ test({
     "The new password takes effect. Signing out and unlocking again requires the new password; the old one no longer works.",
 })
 test({
-  title: "Access is blocked without unlocking",
+  title: "Access is blocked without the password",
   tag: "Security",
   steps: [
-    "Sign in as an ordinary member (do not unlock Leadership).",
-    "Try to open an admin page directly.",
+    "Sign in as an ordinary member (do not enter the Leadership password).",
+    "Type an admin web address directly, such as /admin/members or /admin/lessons.",
+    "Then sign out completely and try the same address again.",
   ],
   expected:
-    "You cannot reach or use leadership tools without unlocking. Activity changes cannot be made without the Leadership password.",
+    "While signed in but locked, you are sent to the Leadership sign-in screen instead of the page — no leadership data is shown. While signed out, you are sent to the member login first. No leadership tool can be reached or used without the Leadership password.",
 })
 
 // ---- Section 5: Devices --------------------------------------------------
@@ -579,7 +674,7 @@ for (let i = range.start; i < range.start + range.count; i++) {
     .font(F)
     .fontSize(8)
     .fill(MUTE)
-    .text("F.A.M.E. Spiritual Growth Portal — Functional Testing Manual", PAGE.margin, bottom, {
+    .text("ROOTED Spiritual Growth Portal — Functional Testing Manual", PAGE.margin, bottom, {
       width: CONTENT_W - 40,
       align: "left",
       lineBreak: false,

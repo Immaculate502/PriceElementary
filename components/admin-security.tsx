@@ -2,12 +2,11 @@
 
 import { useActionState, useState } from "react"
 import { useFormStatus } from "react-dom"
-import { ShieldCheck, LogOut, CheckCircle2, AlertCircle, KeyRound } from "lucide-react"
+import { ShieldCheck, CheckCircle2, AlertCircle, KeyRound } from "lucide-react"
 import {
   changeAdminPassword,
-  lockAdmin,
   type AdminActionResult,
-} from "@/app/(app)/admin/admin-actions"
+} from "@/app/(admin)/admin/admin-actions"
 import { Button } from "@/components/ui/button"
 
 function SaveButton() {
@@ -54,12 +53,6 @@ export function AdminSecurity() {
             <KeyRound className="h-4 w-4" />
             {open ? "Cancel" : "Change password"}
           </Button>
-          <form action={lockAdmin}>
-            <Button type="submit" variant="outline" className="gap-2">
-              <LogOut className="h-4 w-4" />
-              Lock
-            </Button>
-          </form>
         </div>
       </div>
 

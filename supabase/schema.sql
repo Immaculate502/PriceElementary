@@ -1,4 +1,4 @@
--- F.A.M.E. portal schema
+-- ROOTED portal schema
 -- Run this in the Supabase SQL editor after connecting the integration.
 -- The app (lib/data.ts, app/actions.ts) reads/writes exactly these columns.
 
@@ -326,3 +326,254 @@ alter table public.app_settings enable row level security;
 drop policy if exists "app_settings_admin_only" on public.app_settings;
 create policy "app_settings_admin_only" on public.app_settings
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- Lessons system: leader-authored lessons (video + scriptures + instructions
+-- + questions) and member responses (typed answers, reviewed like submissions)
+-- ---------------------------------------------------------------------------
+create table if not exists public.lessons (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null,
+  summary      text not null default '',
+  scripture    text not null default '',       -- scripture references to read
+  instructions text not null default '',       -- what to read / how to study
+  video_path   text,                            -- key in the lesson-videos bucket
+  position     integer not null default 0,      -- manual ordering (lower = first)
+  active       boolean not null default true,   -- retire instead of delete
+  created_at   timestamptz not null default now()
+);
+create index if not exists lessons_active_idx on public.lessons (active);
+create index if not exists lessons_position_idx on public.lessons (position);
+
+-- A question is either open-ended (member types prose) or multiple choice
+-- (member picks one of `options`; `correct_option` is the 0-based index of the
+-- right answer, so choice questions can be graded automatically).
+create table if not exists public.lesson_questions (
+  id             uuid primary key default gen_random_uuid(),
+  lesson_id      uuid not null references public.lessons(id) on delete cascade,
+  prompt         text not null,
+  position       integer not null default 0,
+  kind           text not null default 'open',
+  options        jsonb not null default '[]'::jsonb,
+  correct_option integer,
+  created_at     timestamptz not null default now()
+);
+create index if not exists lesson_questions_lesson_id_idx on public.lesson_questions (lesson_id);
+
+-- Added after the first release, so guard each column for existing databases.
+alter table public.lesson_questions
+  add column if not exists kind text not null default 'open';
+alter table public.lesson_questions
+  add column if not exists options jsonb not null default '[]'::jsonb;
+alter table public.lesson_questions
+  add column if not exists correct_option integer;
+
+alter table public.lesson_questions drop constraint if exists lesson_questions_kind_check;
+alter table public.lesson_questions
+  add constraint lesson_questions_kind_check check (kind in ('open', 'choice'));
+
+-- A choice question needs at least two options and a correct answer that points
+-- at one of them; an open question carries neither.
+alter table public.lesson_questions drop constraint if exists lesson_questions_shape_check;
+alter table public.lesson_questions
+  add constraint lesson_questions_shape_check check (
+    (kind = 'open' and correct_option is null)
+    or (
+      kind = 'choice'
+      and jsonb_typeof(options) = 'array'
+      and jsonb_array_length(options) between 2 and 8
+      and correct_option >= 0
+      and correct_option < jsonb_array_length(options)
+    )
+  );
+
+create table if not exists public.lesson_responses (
+  id          uuid primary key default gen_random_uuid(),
+  lesson_id   uuid not null references public.lessons(id) on delete cascade,
+  member_id   uuid not null references public.profiles(id) on delete cascade,
+  member_name text not null default 'Member',
+  status      public.submission_status not null default 'pending',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique (lesson_id, member_id)              -- one response per member per lesson
+);
+create index if not exists lesson_responses_lesson_id_idx on public.lesson_responses (lesson_id);
+create index if not exists lesson_responses_member_id_idx on public.lesson_responses (member_id);
+create index if not exists lesson_responses_status_idx on public.lesson_responses (status);
+
+-- `answer` holds prose for open questions; `selected_option` holds the chosen
+-- 0-based index for choice questions. Exactly one is meaningful per row.
+create table if not exists public.lesson_answers (
+  id              uuid primary key default gen_random_uuid(),
+  response_id     uuid not null references public.lesson_responses(id) on delete cascade,
+  question_id     uuid not null references public.lesson_questions(id) on delete cascade,
+  answer          text not null default '',
+  selected_option integer,
+  created_at      timestamptz not null default now(),
+  unique (response_id, question_id)
+);
+alter table public.lesson_answers
+  add column if not exists selected_option integer;
+create index if not exists lesson_answers_response_id_idx on public.lesson_answers (response_id);
+
+alter table public.lessons enable row level security;
+alter table public.lesson_questions enable row level security;
+alter table public.lesson_responses enable row level security;
+alter table public.lesson_answers enable row level security;
+
+drop policy if exists "lessons_select_authenticated" on public.lessons;
+create policy "lessons_select_authenticated" on public.lessons
+  for select to authenticated using (true);
+drop policy if exists "lessons_admin_write" on public.lessons;
+create policy "lessons_admin_write" on public.lessons
+  for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "lesson_questions_select_authenticated" on public.lesson_questions;
+create policy "lesson_questions_select_authenticated" on public.lesson_questions
+  for select to authenticated using (true);
+drop policy if exists "lesson_questions_admin_write" on public.lesson_questions;
+create policy "lesson_questions_admin_write" on public.lesson_questions
+  for all using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "lesson_responses_select_own_or_admin" on public.lesson_responses;
+create policy "lesson_responses_select_own_or_admin" on public.lesson_responses
+  for select using (auth.uid() = member_id or public.is_admin());
+drop policy if exists "lesson_responses_insert_own" on public.lesson_responses;
+create policy "lesson_responses_insert_own" on public.lesson_responses
+  for insert with check (auth.uid() = member_id);
+drop policy if exists "lesson_responses_update_own_or_admin" on public.lesson_responses;
+create policy "lesson_responses_update_own_or_admin" on public.lesson_responses
+  for update using (auth.uid() = member_id or public.is_admin());
+drop policy if exists "lesson_responses_delete_own_or_admin" on public.lesson_responses;
+create policy "lesson_responses_delete_own_or_admin" on public.lesson_responses
+  for delete using (auth.uid() = member_id or public.is_admin());
+
+drop policy if exists "lesson_answers_select_own_or_admin" on public.lesson_answers;
+create policy "lesson_answers_select_own_or_admin" on public.lesson_answers
+  for select using (
+    public.is_admin() or exists (
+      select 1 from public.lesson_responses r
+      where r.id = lesson_answers.response_id and r.member_id = auth.uid()
+    )
+  );
+drop policy if exists "lesson_answers_insert_own" on public.lesson_answers;
+create policy "lesson_answers_insert_own" on public.lesson_answers
+  for insert with check (
+    exists (
+      select 1 from public.lesson_responses r
+      where r.id = lesson_answers.response_id and r.member_id = auth.uid()
+    )
+  );
+drop policy if exists "lesson_answers_update_own_or_admin" on public.lesson_answers;
+create policy "lesson_answers_update_own_or_admin" on public.lesson_answers
+  for update using (
+    public.is_admin() or exists (
+      select 1 from public.lesson_responses r
+      where r.id = lesson_answers.response_id and r.member_id = auth.uid()
+    )
+  );
+drop policy if exists "lesson_answers_delete_own_or_admin" on public.lesson_answers;
+create policy "lesson_answers_delete_own_or_admin" on public.lesson_answers
+  for delete using (
+    public.is_admin() or exists (
+      select 1 from public.lesson_responses r
+      where r.id = lesson_answers.response_id and r.member_id = auth.uid()
+    )
+  );
+
+-- Private bucket for lesson teaching videos: any member may watch (signed URL);
+-- only leadership uploads or deletes. 200 MB cap allows longer teaching sessions.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('lesson-videos', 'lesson-videos', false, 209715200)
+on conflict (id) do update set public = false, file_size_limit = 209715200;
+
+drop policy if exists "lesson_videos_select_authenticated" on storage.objects;
+create policy "lesson_videos_select_authenticated" on storage.objects
+  for select to authenticated using (bucket_id = 'lesson-videos');
+drop policy if exists "lesson_videos_admin_insert" on storage.objects;
+create policy "lesson_videos_admin_insert" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'lesson-videos' and public.is_admin());
+drop policy if exists "lesson_videos_admin_delete" on storage.objects;
+create policy "lesson_videos_admin_delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'lesson-videos' and public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- VOCAL: a member's spoken video journal. Each profile can post many videos
+-- over time; they are private to that member and leadership, never shown in
+-- the community feed. Leadership marks each one reviewed so nothing is missed.
+-- ---------------------------------------------------------------------------
+create table if not exists public.vocal_videos (
+  id          uuid primary key default gen_random_uuid(),
+  member_id   uuid not null references public.profiles(id) on delete cascade,
+  member_name text,
+  title       text not null,
+  note        text not null default '',      -- optional written context
+  video_path  text not null,                 -- key in the vocal-videos bucket
+  reviewed_at timestamptz,                   -- null = still new to leadership
+  created_at  timestamptz not null default now()
+);
+create index if not exists vocal_videos_member_id_idx on public.vocal_videos (member_id);
+create index if not exists vocal_videos_created_at_idx on public.vocal_videos (created_at desc);
+-- Partial index: the leadership queue filters on "not yet reviewed".
+create index if not exists vocal_videos_unreviewed_idx
+  on public.vocal_videos (created_at desc) where reviewed_at is null;
+
+alter table public.vocal_videos enable row level security;
+
+-- A member may post only as themselves.
+drop policy if exists "vocal_videos_insert_own" on public.vocal_videos;
+create policy "vocal_videos_insert_own" on public.vocal_videos
+  for insert to authenticated
+  with check (member_id = auth.uid());
+
+-- Readable by its owner or leadership only.
+drop policy if exists "vocal_videos_select_own_or_admin" on public.vocal_videos;
+create policy "vocal_videos_select_own_or_admin" on public.vocal_videos
+  for select to authenticated
+  using (member_id = auth.uid() or public.is_admin());
+
+-- Only leadership flips the reviewed flag.
+drop policy if exists "vocal_videos_update_admin" on public.vocal_videos;
+create policy "vocal_videos_update_admin" on public.vocal_videos
+  for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- A member may withdraw their own video; leadership may remove any.
+drop policy if exists "vocal_videos_delete_own_or_admin" on public.vocal_videos;
+create policy "vocal_videos_delete_own_or_admin" on public.vocal_videos
+  for delete to authenticated
+  using (member_id = auth.uid() or public.is_admin());
+
+-- Private bucket for VOCAL recordings, keyed "<user_id>/<uuid>.<ext>" and
+-- served via short-lived signed URLs. 200 MB matches the lesson-video cap so a
+-- longer spoken reflection isn't rejected mid-upload.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('vocal-videos', 'vocal-videos', false, 209715200)
+on conflict (id) do update set public = false, file_size_limit = 209715200;
+
+-- Members upload only into their own folder.
+drop policy if exists "vocal_videos_storage_insert_own" on storage.objects;
+create policy "vocal_videos_storage_insert_own" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'vocal-videos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "vocal_videos_storage_select_own_or_admin" on storage.objects;
+create policy "vocal_videos_storage_select_own_or_admin" on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'vocal-videos'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );
+
+drop policy if exists "vocal_videos_storage_delete_own_or_admin" on storage.objects;
+create policy "vocal_videos_storage_delete_own_or_admin" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'vocal-videos'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );

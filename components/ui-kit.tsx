@@ -1,15 +1,15 @@
 import type React from "react"
 import { cn } from "@/lib/utils"
-import { PILLAR_META, type FamePillar, type SubmissionStatus } from "@/lib/types"
+import { PILLAR_META, type Pillar, type SubmissionStatus } from "@/lib/types"
 
 export function PillarProgressBars({
   progress,
   size = "sm",
 }: {
-  progress: Record<FamePillar, number>
+  progress: Record<Pillar, number>
   size?: "sm" | "lg"
 }) {
-  const pillars = Object.keys(PILLAR_META) as FamePillar[]
+  const pillars = Object.keys(PILLAR_META) as Pillar[]
   const max = Math.max(1, ...pillars.map((p) => progress[p]))
   return (
     <div className={cn("grid gap-2", size === "lg" && "gap-3")}>
@@ -106,7 +106,7 @@ export function Card({
   )
 }
 
-export function PillarBadge({ pillar }: { pillar: FamePillar }) {
+export function PillarBadge({ pillar }: { pillar: Pillar }) {
   const meta = PILLAR_META[pillar]
   return (
     <span

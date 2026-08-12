@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom"
 import { CheckCircle2, AlertCircle, Video, Loader2, X } from "lucide-react"
 import { createSubmission, type ActionResult } from "@/app/actions"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { PILLAR_META, type FamePillar, type SubmissionType } from "@/lib/types"
+import { PILLAR_META, type Pillar, type SubmissionType } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024 // 50 MB
@@ -35,7 +35,7 @@ export function SubmissionForm({
   bodyLabel = "Details",
 }: {
   type: SubmissionType
-  defaultPillar?: FamePillar
+  defaultPillar?: Pillar
   submitLabel?: string
   showPrivate?: boolean
   allowVideo?: boolean
@@ -133,7 +133,7 @@ export function SubmissionForm({
 
       <div className="grid gap-2">
         <label htmlFor="pillar" className="text-sm font-medium text-foreground">
-          F.A.M.E. Pillar
+          Growth Area
         </label>
         <select
           id="pillar"
@@ -141,7 +141,7 @@ export function SubmissionForm({
           defaultValue={defaultPillar}
           className="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-ring/40 focus:ring-2"
         >
-          {(Object.keys(PILLAR_META) as FamePillar[]).map((p) => (
+          {(Object.keys(PILLAR_META) as Pillar[]).map((p) => (
             <option key={p} value={p}>
               {PILLAR_META[p].label}
             </option>

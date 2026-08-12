@@ -1,17 +1,17 @@
 import { Card, EmptyState, PageHeader, PillarBadge } from "@/components/ui-kit"
 import { getActivities } from "@/lib/data"
-import { PILLAR_META, type FamePillar } from "@/lib/types"
+import { PILLAR_META, type Pillar } from "@/lib/types"
 
 export default async function ActivitiesPage() {
   const activities = await getActivities()
-  const pillars = Object.keys(PILLAR_META) as FamePillar[]
+  const pillars = Object.keys(PILLAR_META) as Pillar[]
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Disciplines"
-        title="F.A.M.E. Activities"
-        description="Track the disciplines that shape a growing disciple across all four pillars. Complete activities to earn growth points and build your streak."
+        title="Activities"
+        description="Track the disciplines that shape a growing disciple across all four growth areas. Complete activities to earn growth points and build your streak."
       />
 
       {activities.length === 0 && (

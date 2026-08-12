@@ -16,13 +16,13 @@ import {
   setActivityActive,
   updateActivity,
   type AdminActionResult,
-} from "@/app/(app)/admin/admin-actions"
+} from "@/app/(admin)/admin/admin-actions"
 import { Button } from "@/components/ui/button"
 import { Card, PillarBadge } from "@/components/ui-kit"
-import { PILLAR_META, type Activity, type FamePillar } from "@/lib/types"
+import { PILLAR_META, type Activity, type Pillar } from "@/lib/types"
 
 const FREQUENCIES = ["daily", "weekly", "monthly"] as const
-const PILLARS = Object.keys(PILLAR_META) as FamePillar[]
+const PILLARS = Object.keys(PILLAR_META) as Pillar[]
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-gold focus-visible:ring-2 focus-visible:ring-ring"
@@ -93,7 +93,7 @@ function ActivityFields({ activity }: { activity?: Activity }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="grid gap-2">
           <label htmlFor={`pillar-${uid}`} className="text-sm font-medium text-foreground">
-            Pillar
+            Growth area
           </label>
           <select
             id={`pillar-${uid}`}

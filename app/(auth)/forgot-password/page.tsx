@@ -1,18 +1,19 @@
 import { ForgotPasswordForm } from "@/components/forgot-password-form"
+import { RootedEmblem } from "@/components/rooted-emblem"
 
 export const metadata = {
-  title: "Reset your password | F.A.M.E.",
-  description: "Request a link to reset your F.A.M.E. member account password.",
+  title: "Reset your password | ROOTED",
+  description: "Request a link to reset your ROOTED member account password.",
 }
 
 export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy font-display text-lg font-bold text-navy-foreground">
-          F
-        </div>
-        <span className="font-display text-xl font-semibold text-foreground">F.A.M.E.</span>
+        <RootedEmblem size={40} priority />
+        <span className="font-display text-xl font-semibold tracking-wide text-foreground">
+          ROOTED
+        </span>
       </div>
 
       <div>
