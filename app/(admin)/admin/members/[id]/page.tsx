@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Flame, Lock, MessageSquare, Video } from "lucide-react"
+import { ArrowLeft, Flame, Lock, MessageSquare, Mic, Video } from "lucide-react"
 import {
   Card,
   PageHeader,
@@ -10,7 +10,8 @@ import {
   EmptyState,
 } from "@/components/ui-kit"
 import { MemberRoleToggle } from "@/components/member-role-toggle"
-import { getMemberById, getSubmissions, pillarProgress } from "@/lib/data"
+import { VocalReviewCard } from "@/components/vocal-review-card"
+import { getMemberById, getSubmissions, getVocalVideos, pillarProgress } from "@/lib/data"
 
 function formatDateTime(iso: string) {
   if (!iso) return "—"
@@ -41,7 +42,11 @@ export default async function MemberDetailPage({
   const member = await getMemberById(id)
   if (!member) notFound()
 
-  const submissions = await getSubmissions({ memberId: id })
+  const [submissions, vocalVideos] = await Promise.all([
+    getSubmissions({ memberId: id }),
+    getVocalVideos({ memberId: id, forLeadership: true }),
+  ])
+  const unreviewedVocal = vocalVideos.filter((v) => !v.reviewedAt).length
   const progress = pillarProgress(submissions)
   const approvedCount = submissions.filter((s) => s.status === "approved").length
   const pendingCount = submissions.filter((s) => s.status === "pending").length
@@ -128,6 +133,33 @@ export default async function MemberDetailPage({
           </div>
         </Card>
       </div>
+
+      {/* VOCAL recordings */}
+      <section>
+        <h2 className="mb-4 flex items-center gap-2 font-display text-xl font-semibold text-foreground">
+          <Mic className="h-5 w-5 text-gold" aria-hidden="true" />
+          VOCAL recordings
+          {vocalVideos.length > 0 && (
+            <span className="text-sm font-normal text-muted-foreground">
+              {vocalVideos.length}
+              {unreviewedVocal > 0 && ` · ${unreviewedVocal} new`}
+            </span>
+          )}
+        </h2>
+
+        {vocalVideos.length === 0 ? (
+          <EmptyState
+            title="No VOCAL videos yet"
+            description="This member hasn't recorded a spoken reflection."
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {vocalVideos.map((v) => (
+              <VocalReviewCard key={v.id} video={v} />
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Message timeline */}
       <section>

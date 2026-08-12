@@ -14,6 +14,7 @@ import {
   type LessonResponse,
   type Member,
   type Submission,
+  type VocalVideo,
 } from "./types"
 
 const PILLAR_KEYS = Object.keys(PILLAR_META) as Pillar[]
@@ -321,4 +322,86 @@ export async function getMyLessonResponse(
   const member = await getCurrentMember()
   const responses = await getLessonResponses({ lessonId, memberId: member.id })
   return responses[0] ?? null
+}
+
+// ---------------------------------------------------------------------------
+// VOCAL video journal
+// ---------------------------------------------------------------------------
+
+/**
+ * VOCAL entries, newest first, each with a 1-hour signed playback URL.
+ *
+ * Two distinct read paths, because the console's identity model differs from
+ * the database's:
+ *
+ * - Members (default) read through their own session, so RLS narrows the rows
+ *   to videos they own.
+ * - Leadership (`forLeadership`) reads with the service-role client. The console
+ *   is gated by the shared administrator password, NOT by a `role = 'admin'`
+ *   profile, so `is_admin()` can be false for a legitimate leader and RLS would
+ *   silently hide every member's video. Unlocking the console is the
+ *   authorization check, and it is verified here before the privileged read.
+ *
+ * No demo fallback: VOCAL is member-authored, so before Supabase there are none.
+ */
+export async function getVocalVideos(options?: {
+  memberId?: string
+  forLeadership?: boolean
+}): Promise<VocalVideo[]> {
+  if (!isSupabaseConfigured()) return []
+
+  const forLeadership = options?.forLeadership ?? false
+
+  let supabase
+  if (forLeadership) {
+    // Imported lazily so the member pages never pull in cookie-reading
+    // admin-auth or the service-role client.
+    const [{ isAdminUnlocked }, { getSupabaseAdminClient }] = await Promise.all([
+      import("./admin-auth"),
+      import("./supabase/admin"),
+    ])
+    if (!(await isAdminUnlocked())) return []
+    supabase = getSupabaseAdminClient() ?? (await getSupabaseServerClient())
+  } else {
+    supabase = await getSupabaseServerClient()
+  }
+  if (!supabase) return []
+
+  let query = supabase
+    .from("vocal_videos")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (options?.memberId) query = query.eq("member_id", options.memberId)
+
+  const { data } = await query
+  if (!data) return []
+
+  return Promise.all(
+    data.map(async (d) => {
+      let videoUrl: string | null = null
+      if (d.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("vocal-videos")
+          .createSignedUrl(d.video_path, 60 * 60) // 1 hour
+        videoUrl = signed?.signedUrl ?? null
+      }
+      return {
+        id: d.id,
+        memberId: d.member_id,
+        memberName: d.member_name ?? "Member",
+        title: d.title,
+        note: d.note ?? "",
+        videoUrl,
+        reviewedAt: d.reviewed_at ?? null,
+        createdAt: d.created_at,
+      }
+    }),
+  )
+}
+
+/** The signed-in member's own VOCAL entries. */
+export async function getMyVocalVideos(): Promise<VocalVideo[]> {
+  const member = await getCurrentMember()
+  return getVocalVideos({ memberId: member.id })
 }

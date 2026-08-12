@@ -498,3 +498,82 @@ drop policy if exists "lesson_videos_admin_delete" on storage.objects;
 create policy "lesson_videos_admin_delete" on storage.objects
   for delete to authenticated
   using (bucket_id = 'lesson-videos' and public.is_admin());
+
+-- ---------------------------------------------------------------------------
+-- VOCAL: a member's spoken video journal. Each profile can post many videos
+-- over time; they are private to that member and leadership, never shown in
+-- the community feed. Leadership marks each one reviewed so nothing is missed.
+-- ---------------------------------------------------------------------------
+create table if not exists public.vocal_videos (
+  id          uuid primary key default gen_random_uuid(),
+  member_id   uuid not null references public.profiles(id) on delete cascade,
+  member_name text,
+  title       text not null,
+  note        text not null default '',      -- optional written context
+  video_path  text not null,                 -- key in the vocal-videos bucket
+  reviewed_at timestamptz,                   -- null = still new to leadership
+  created_at  timestamptz not null default now()
+);
+create index if not exists vocal_videos_member_id_idx on public.vocal_videos (member_id);
+create index if not exists vocal_videos_created_at_idx on public.vocal_videos (created_at desc);
+-- Partial index: the leadership queue filters on "not yet reviewed".
+create index if not exists vocal_videos_unreviewed_idx
+  on public.vocal_videos (created_at desc) where reviewed_at is null;
+
+alter table public.vocal_videos enable row level security;
+
+-- A member may post only as themselves.
+drop policy if exists "vocal_videos_insert_own" on public.vocal_videos;
+create policy "vocal_videos_insert_own" on public.vocal_videos
+  for insert to authenticated
+  with check (member_id = auth.uid());
+
+-- Readable by its owner or leadership only.
+drop policy if exists "vocal_videos_select_own_or_admin" on public.vocal_videos;
+create policy "vocal_videos_select_own_or_admin" on public.vocal_videos
+  for select to authenticated
+  using (member_id = auth.uid() or public.is_admin());
+
+-- Only leadership flips the reviewed flag.
+drop policy if exists "vocal_videos_update_admin" on public.vocal_videos;
+create policy "vocal_videos_update_admin" on public.vocal_videos
+  for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- A member may withdraw their own video; leadership may remove any.
+drop policy if exists "vocal_videos_delete_own_or_admin" on public.vocal_videos;
+create policy "vocal_videos_delete_own_or_admin" on public.vocal_videos
+  for delete to authenticated
+  using (member_id = auth.uid() or public.is_admin());
+
+-- Private bucket for VOCAL recordings, keyed "<user_id>/<uuid>.<ext>" and
+-- served via short-lived signed URLs. 200 MB matches the lesson-video cap so a
+-- longer spoken reflection isn't rejected mid-upload.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('vocal-videos', 'vocal-videos', false, 209715200)
+on conflict (id) do update set public = false, file_size_limit = 209715200;
+
+-- Members upload only into their own folder.
+drop policy if exists "vocal_videos_storage_insert_own" on storage.objects;
+create policy "vocal_videos_storage_insert_own" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'vocal-videos'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "vocal_videos_storage_select_own_or_admin" on storage.objects;
+create policy "vocal_videos_storage_select_own_or_admin" on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'vocal-videos'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );
+
+drop policy if exists "vocal_videos_storage_delete_own_or_admin" on storage.objects;
+create policy "vocal_videos_storage_delete_own_or_admin" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'vocal-videos'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );

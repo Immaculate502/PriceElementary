@@ -188,6 +188,60 @@ export async function submitLessonResponse(
   return { ok: true, message: "Your answers were submitted for review. Thank you!" }
 }
 
+/**
+ * Post a VOCAL video journal entry. The file itself is uploaded straight to the
+ * private `vocal-videos` bucket by the browser (storage RLS pins it to the
+ * member's own folder); this records the row that points at it.
+ */
+export async function createVocalVideo(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const title = String(formData.get("title") ?? "").trim()
+  const note = String(formData.get("note") ?? "").trim()
+  const videoPath = String(formData.get("videoPath") ?? "").trim()
+
+  if (!title) return { ok: false, message: "Please give your video a title." }
+  if (!videoPath) {
+    return { ok: false, message: "Please choose a video before posting." }
+  }
+  if (title.length > 200) {
+    return { ok: false, message: "Please keep the title under 200 characters." }
+  }
+  if (note.length > 5000) {
+    return { ok: false, message: "Please keep the note under 5000 characters." }
+  }
+
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to post VOCAL videos." }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const member = await getCurrentMember()
+
+  // The uploader keys objects as "<user id>/<uuid>.<ext>". Re-check that prefix
+  // server-side so a tampered form can't attach someone else's recording.
+  if (!videoPath.startsWith(`${member.id}/`)) {
+    return { ok: false, message: "That video could not be verified. Please re-upload." }
+  }
+
+  const { error } = await supabase.from("vocal_videos").insert({
+    member_id: member.id,
+    member_name: member.name,
+    title,
+    note,
+    video_path: videoPath,
+  })
+
+  if (error) return { ok: false, message: `Could not post: ${error.message}` }
+
+  revalidatePath("/vocal")
+  revalidatePath("/admin/vocal")
+  return { ok: true, message: "Your VOCAL video was sent to leadership." }
+}
+
 export async function moderateSubmission(
   id: string,
   status: "approved" | "rejected",

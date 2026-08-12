@@ -10,6 +10,7 @@ import {
   Home,
   ListChecks,
   MessageSquareQuote,
+  Mic,
   NotebookPen,
   Sparkles,
 } from "lucide-react"
@@ -22,6 +23,7 @@ const memberLinks = [
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/bible-study", label: "Bible Study", icon: BookOpen },
   { href: "/reading-plan", label: "Lessons", icon: GraduationCap },
+  { href: "/vocal", label: "VOCAL", icon: Mic },
   { href: "/confessions", label: "Confessions", icon: Sparkles },
   { href: "/prayer-requests", label: "Prayer Requests", icon: HandHeart },
   { href: "/prayer-schedule", label: "Prayer Schedule", icon: CalendarClock },

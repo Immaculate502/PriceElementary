@@ -13,6 +13,7 @@ const links = [
   { href: "/journal", label: "Journal" },
   { href: "/bible-study", label: "Bible Study" },
   { href: "/reading-plan", label: "Lessons" },
+  { href: "/vocal", label: "VOCAL" },
   { href: "/confessions", label: "Confessions" },
   { href: "/prayer-requests", label: "Prayer Requests" },
   { href: "/prayer-schedule", label: "Prayer Schedule" },

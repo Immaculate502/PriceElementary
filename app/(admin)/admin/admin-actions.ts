@@ -612,3 +612,49 @@ export async function changeAdminPassword(
       : "Password updated for this browser (demo mode). Connect Supabase to share it across all leadership devices.",
   }
 }
+
+// ---------------------------------------------------------------------------
+// VOCAL review
+// ---------------------------------------------------------------------------
+
+/**
+ * Mark a VOCAL video reviewed, or move it back to the queue.
+ *
+ * Unlocking the console is the authorization check here, so the write goes
+ * through the service-role client: `vocal_videos` UPDATE is RLS-restricted to
+ * `is_admin()`, and a leader holding the shared password may not have an
+ * `admin` profile row. Without this the button would fail for exactly the
+ * people it exists for.
+ */
+export async function setVocalReviewed(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  if (!(await isAdminUnlocked())) {
+    return { ok: false, message: "Sign in to the Leadership Console first." }
+  }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to review VOCAL videos." }
+  }
+
+  const id = String(formData.get("vocalId") ?? "").trim()
+  const reviewed = String(formData.get("reviewed") ?? "") === "true"
+  if (!id) return { ok: false, message: "Missing video." }
+
+  const supabase = getSupabaseAdminClient() ?? (await getSupabaseServerClient())
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const { error } = await supabase
+    .from("vocal_videos")
+    .update({ reviewed_at: reviewed ? new Date().toISOString() : null })
+    .eq("id", id)
+
+  if (error) return { ok: false, message: error.message }
+
+  revalidatePath("/admin/vocal")
+  revalidatePath("/admin/members")
+  return {
+    ok: true,
+    message: reviewed ? "Marked reviewed." : "Moved back to the queue.",
+  }
+}

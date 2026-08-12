@@ -114,6 +114,22 @@ export interface LessonResponse {
   answers: LessonAnswer[]
 }
 
+/**
+ * VOCAL — a member's spoken video journal entry. Visible only to its owner and
+ * leadership. `videoUrl` is a short-lived signed URL (null if it could not be
+ * signed); `reviewedAt` is null until leadership marks it reviewed.
+ */
+export interface VocalVideo {
+  id: string
+  memberId: string
+  memberName: string
+  title: string
+  note: string
+  videoUrl: string | null
+  reviewedAt: string | null
+  createdAt: string
+}
+
 export interface PrayerSlot {
   id: string
   time: string
