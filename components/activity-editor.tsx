@@ -16,7 +16,7 @@ import {
   setActivityActive,
   updateActivity,
   type AdminActionResult,
-} from "@/app/(app)/admin/admin-actions"
+} from "@/app/(admin)/admin/admin-actions"
 import { Button } from "@/components/ui/button"
 import { Card, PillarBadge } from "@/components/ui-kit"
 import { PILLAR_META, type Activity, type FamePillar } from "@/lib/types"

@@ -19,7 +19,7 @@ import {
   setLessonActive,
   updateLesson,
   type AdminActionResult,
-} from "@/app/(app)/admin/admin-actions"
+} from "@/app/(admin)/admin/admin-actions"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui-kit"

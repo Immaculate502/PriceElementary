@@ -1,6 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import {
   UNLOCK_COOKIE,
@@ -39,7 +40,8 @@ export async function unlockAdmin(
   })
 
   revalidatePath("/admin")
-  return { ok: true, message: "Unlocked." }
+  // Sign-in lives on its own page now, so send the leader straight into the console.
+  redirect("/admin")
 }
 
 const PILLARS = ["faith", "action", "ministry", "evangelism"] as const
@@ -353,6 +355,7 @@ export async function lockAdmin(): Promise<void> {
   const store = await cookies()
   store.delete(UNLOCK_COOKIE)
   revalidatePath("/admin")
+  redirect("/admin/login")
 }
 
 export async function setMemberRole(

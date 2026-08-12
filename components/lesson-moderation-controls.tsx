@@ -6,7 +6,7 @@ import { AlertCircle, Check, X } from "lucide-react"
 import {
   moderateLessonResponse,
   type AdminActionResult,
-} from "@/app/(app)/admin/admin-actions"
+} from "@/app/(admin)/admin/admin-actions"
 
 function Button({
   status,
