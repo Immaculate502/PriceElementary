@@ -44,7 +44,18 @@ function SubmitButton({ label }: { label: string }) {
   )
 }
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({
+  mode,
+  googleEnabled = true,
+}: {
+  mode: "login" | "signup"
+  /**
+   * Whether Google is actually enabled on the Supabase project. Checked
+   * server-side, because `signInWithOAuth` navigates away without pre-flighting
+   * and would otherwise dump the member on Supabase's raw JSON error page.
+   */
+  googleEnabled?: boolean
+}) {
   const action = mode === "login" ? signIn : signUp
   const [state, formAction] = useActionState<AuthResult | null, FormData>(action, null)
   const [googleBusy, setGoogleBusy] = useState(false)
@@ -61,17 +72,25 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     }
 
     setGoogleBusy(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
-      },
-    })
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`,
+        },
+      })
+      // On success the browser is already navigating to Google, so this
+      // component unmounts and the busy state never needs clearing.
+      if (error) {
+        setGoogleBusy(false)
+        setGoogleMessage(error.message)
+      }
+    } catch {
+      // Without this the button would spin forever on an unexpected throw.
       setGoogleBusy(false)
-      setGoogleMessage(error.message)
+      setGoogleMessage("Could not reach Google sign-in. Please use your email and password.")
     }
   }
 
@@ -142,7 +161,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         type="button"
         variant="outline"
         onClick={handleGoogle}
-        disabled={googleBusy}
+        disabled={googleBusy || !googleEnabled}
         className="w-full gap-2 bg-background"
       >
         <GoogleIcon />
@@ -152,6 +171,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             ? "Sign in with Google"
             : "Sign up with Google"}
       </Button>
+
+      {!googleEnabled && (
+        <p className="text-center text-xs text-muted-foreground text-pretty">
+          Google sign-in isn&apos;t available yet. Please use your email and password above.
+        </p>
+      )}
 
       {googleMessage && (
         <p className="flex items-center gap-1.5 text-sm text-destructive" role="status">

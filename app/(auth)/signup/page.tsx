@@ -1,7 +1,10 @@
 import { AuthForm } from "@/components/auth-form"
 import { RootedEmblem } from "@/components/rooted-emblem"
+import { isOAuthProviderEnabled } from "@/lib/supabase/oauth-status"
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const googleEnabled = await isOAuthProviderEnabled("google")
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 lg:hidden">
@@ -18,7 +21,7 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <AuthForm mode="signup" />
+      <AuthForm mode="signup" googleEnabled={googleEnabled} />
     </div>
   )
 }
