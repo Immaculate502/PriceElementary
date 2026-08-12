@@ -4,7 +4,7 @@ import { getActivities } from "@/lib/data"
 
 export const metadata = {
   title: "Activities · Leadership",
-  description: "Add, edit, and retire the F.A.M.E. activities members work through.",
+  description: "Add, edit, and retire the activities members work through.",
 }
 
 export default async function AdminActivitiesPage() {
@@ -16,7 +16,7 @@ export default async function AdminActivitiesPage() {
       <PageHeader
         eyebrow="Leadership"
         title="Activities"
-        description="Define what members work through in each pillar. Changes appear on their Activities page immediately."
+        description="Define what members work through in each growth area. Changes appear on their Activities page immediately."
       />
 
       <ActivityEditor activities={activities} />

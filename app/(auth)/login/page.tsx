@@ -16,7 +16,7 @@ export default async function LoginPage({
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy text-navy-foreground font-display text-lg font-bold">
           F
         </div>
-        <span className="font-display text-xl font-semibold text-foreground">F.A.M.E.</span>
+        <span className="font-display text-xl font-semibold text-foreground">ROOTED</span>
       </div>
 
       <div>

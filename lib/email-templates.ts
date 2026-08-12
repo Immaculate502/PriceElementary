@@ -3,16 +3,16 @@ import "server-only"
 /**
  * Password-reset email content. Email clients ignore external CSS and don't
  * understand oklch, so everything is inline hex that mirrors the app's
- * gold-on-dark F.A.M.E. brand.
+ * gold-on-green ROOTED brand.
  */
 export function passwordResetEmail(resetUrl: string) {
-  const subject = "Reset your F.A.M.E. password"
+  const subject = "Reset your ROOTED password"
 
   // Plain-text fallback for clients that block HTML.
   const text = [
-    "Reset your F.A.M.E. password",
+    "Reset your ROOTED password",
     "",
-    "We received a request to reset the password for your New Light F.A.M.E. account.",
+    "We received a request to reset the password for your New Light ROOTED account.",
     "Open this link to choose a new password:",
     resetUrl,
     "",
@@ -28,8 +28,8 @@ export function passwordResetEmail(resetUrl: string) {
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e7e0d2;">
             <tr>
-              <td style="background-color:#211d18;padding:32px;text-align:center;">
-                <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#d8b451;">F.A.M.E.</div>
+              <td style="background-color:#1a4732;padding:32px;text-align:center;">
+                <div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#d8b451;">ROOTED</div>
                 <div style="font-size:12px;letter-spacing:1px;color:#b7ac97;margin-top:6px;">FAITH · ACTION · MINISTRY · EVANGELISM</div>
               </td>
             </tr>
@@ -37,7 +37,7 @@ export function passwordResetEmail(resetUrl: string) {
               <td style="padding:32px;">
                 <h1 style="margin:0 0 16px;font-size:20px;color:#211d18;">Reset your password</h1>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#4a4437;">
-                  We received a request to reset the password for your New Light F.A.M.E. account.
+                  We received a request to reset the password for your New Light ROOTED account.
                   Tap the button below to choose a new one.
                 </p>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
@@ -63,7 +63,7 @@ export function passwordResetEmail(resetUrl: string) {
             </tr>
             <tr>
               <td style="background-color:#f5f2ea;padding:20px 32px;text-align:center;border-top:1px solid #e7e0d2;">
-                <p style="margin:0;font-size:12px;color:#8a8272;">New Light Church · F.A.M.E. Discipleship</p>
+                <p style="margin:0;font-size:12px;color:#8a8272;">New Light Church · ROOTED Discipleship</p>
               </td>
             </tr>
           </table>

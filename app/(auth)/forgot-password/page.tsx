@@ -1,8 +1,8 @@
 import { ForgotPasswordForm } from "@/components/forgot-password-form"
 
 export const metadata = {
-  title: "Reset your password | F.A.M.E.",
-  description: "Request a link to reset your F.A.M.E. member account password.",
+  title: "Reset your password | ROOTED",
+  description: "Request a link to reset your ROOTED member account password.",
 }
 
 export default function ForgotPasswordPage() {
@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy font-display text-lg font-bold text-navy-foreground">
           F
         </div>
-        <span className="font-display text-xl font-semibold text-foreground">F.A.M.E.</span>
+        <span className="font-display text-xl font-semibold text-foreground">ROOTED</span>
       </div>
 
       <div>

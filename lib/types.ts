@@ -1,4 +1,4 @@
-export type FamePillar = "faith" | "action" | "ministry" | "evangelism"
+export type Pillar = "faith" | "action" | "ministry" | "evangelism"
 
 export interface Member {
   id: string
@@ -14,7 +14,7 @@ export type ActivityFrequency = "daily" | "weekly" | "monthly"
 
 export interface Activity {
   id: string
-  pillar: FamePillar
+  pillar: Pillar
   title: string
   description: string
   points: number
@@ -41,7 +41,7 @@ export interface Submission {
   memberId: string
   memberName: string
   type: SubmissionType
-  pillar: FamePillar
+  pillar: Pillar
   title: string
   body: string
   status: SubmissionStatus
@@ -105,7 +105,7 @@ export interface PrayerSlot {
 }
 
 export const PILLAR_META: Record<
-  FamePillar,
+  Pillar,
   { label: string; letter: string; blurb: string; token: string }
 > = {
   faith: {

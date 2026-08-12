@@ -198,7 +198,7 @@ export default async function AdminPage() {
                 <th className="px-4 py-3 font-medium">Title</th>
                 <th className="px-4 py-3 font-medium">Member</th>
                 <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Pillar</th>
+                <th className="px-4 py-3 font-medium">Growth area</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>

@@ -46,7 +46,7 @@ export function AdminSidebar() {
           <p className="font-display text-lg font-semibold text-sidebar-foreground">
             Leadership
           </p>
-          <p className="text-xs text-sidebar-foreground/60">F.A.M.E. Console</p>
+          <p className="text-xs text-sidebar-foreground/60">ROOTED Console</p>
         </div>
       </div>
 

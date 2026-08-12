@@ -1,8 +1,8 @@
 import { ResetPasswordForm } from "@/components/reset-password-form"
 
 export const metadata = {
-  title: "Choose a new password | F.A.M.E.",
-  description: "Set a new password for your F.A.M.E. member account.",
+  title: "Choose a new password | ROOTED",
+  description: "Set a new password for your ROOTED member account.",
 }
 
 // Reachable only with the session created by the recovery link. The proxy sends
@@ -14,7 +14,7 @@ export default function ResetPasswordPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy font-display text-lg font-bold text-navy-foreground">
           F
         </div>
-        <span className="font-display text-xl font-semibold text-foreground">F.A.M.E.</span>
+        <span className="font-display text-xl font-semibold text-foreground">ROOTED</span>
       </div>
 
       <div>

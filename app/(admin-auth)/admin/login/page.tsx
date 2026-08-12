@@ -4,8 +4,8 @@ import { isAdminUnlocked } from "@/lib/admin-auth"
 import { AdminLoginForm } from "@/components/admin-login-form"
 
 export const metadata: Metadata = {
-  title: "Leadership sign in | F.A.M.E.",
-  description: "Sign in to the F.A.M.E. leadership console.",
+  title: "Leadership sign in | ROOTED",
+  description: "Sign in to the ROOTED leadership console.",
   robots: { index: false, follow: false },
 }
 

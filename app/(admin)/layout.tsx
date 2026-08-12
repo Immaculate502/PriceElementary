@@ -6,8 +6,8 @@ import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin-header"
 
 export const metadata: Metadata = {
-  title: "Leadership Console | F.A.M.E.",
-  description: "Restricted leadership area for F.A.M.E. group administrators.",
+  title: "Leadership Console | ROOTED",
+  description: "Restricted leadership area for ROOTED group administrators.",
   robots: { index: false, follow: false },
 }
 

@@ -1,4 +1,4 @@
--- F.A.M.E. portal schema
+-- ROOTED portal schema
 -- Run this in the Supabase SQL editor after connecting the integration.
 -- The app (lib/data.ts, app/actions.ts) reads/writes exactly these columns.
 

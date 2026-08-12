@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Flame } from "lucide-react"
 import { MobileNav } from "./mobile-nav"
-import { FameEmblem } from "./fame-emblem"
+import { RootedEmblem } from "./rooted-emblem"
 import { SignOutButton } from "./sign-out-button"
 import { getCurrentMember } from "@/lib/data"
 
@@ -18,8 +18,8 @@ export async function AppHeader() {
       <div className="flex items-center gap-3">
         <MobileNav />
         <Link href="/" className="flex items-center gap-2 lg:hidden">
-          <FameEmblem size={32} />
-          <span className="font-display text-lg font-semibold">F.A.M.E.</span>
+          <RootedEmblem size={32} />
+          <span className="font-display text-lg font-semibold tracking-wide">ROOTED</span>
         </Link>
       </div>
 

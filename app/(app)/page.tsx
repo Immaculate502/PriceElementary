@@ -3,7 +3,7 @@ import { ArrowUpRight, BookOpen, Flame, HandHeart, Sparkles } from "lucide-react
 import { Card, PageHeader, PillarBadge, StatusBadge } from "@/components/ui-kit"
 import { getActivities, getCurrentMember, getSubmissions } from "@/lib/data"
 import { MEMORY_VERSE } from "@/lib/demo-data"
-import { PILLAR_META, type FamePillar } from "@/lib/types"
+import { PILLAR_META, type Pillar } from "@/lib/types"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     getSubmissions({ memberId: undefined }),
   ])
 
-  const pillars = Object.keys(PILLAR_META) as FamePillar[]
+  const pillars = Object.keys(PILLAR_META) as Pillar[]
   const recent = submissions.slice(0, 4)
 
   return (
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
       <PageHeader
         eyebrow={`Welcome back, ${member.name.split(" ")[0]}`}
         title="Your walk this week"
-        description="Faith · Action · Ministry · Evangelism — grow intentionally across all four pillars."
+        description="Faith · Action · Ministry · Evangelism — grow intentionally across all four growth areas."
       />
 
       {/* Stats */}
@@ -79,7 +79,9 @@ export default async function DashboardPage() {
 
       {/* Pillars */}
       <section className="flex flex-col gap-4">
-        <h2 className="font-display text-xl font-semibold text-foreground">The four pillars</h2>
+              <h2 className="font-display text-xl font-semibold text-foreground">
+                The four growth areas
+              </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {pillars.map((p) => {
             const meta = PILLAR_META[p]

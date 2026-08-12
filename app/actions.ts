@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { getCurrentMember } from "@/lib/data"
-import type { FamePillar, SubmissionType } from "@/lib/types"
+import type { Pillar, SubmissionType } from "@/lib/types"
 
 export type ActionResult = { ok: boolean; message: string }
 
@@ -15,7 +15,7 @@ export async function createSubmission(
   const title = String(formData.get("title") ?? "").trim()
   const body = String(formData.get("body") ?? "").trim()
   const type = String(formData.get("type") ?? "journal") as SubmissionType
-  const pillar = String(formData.get("pillar") ?? "faith") as FamePillar
+  const pillar = String(formData.get("pillar") ?? "faith") as Pillar
   const isPrivate = formData.get("isPrivate") === "on"
   const videoPath = String(formData.get("videoPath") ?? "").trim()
 

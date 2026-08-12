@@ -9,14 +9,14 @@ import {
 import {
   PILLAR_META,
   type Activity,
-  type FamePillar,
+  type Pillar,
   type Lesson,
   type LessonResponse,
   type Member,
   type Submission,
 } from "./types"
 
-const PILLAR_KEYS = Object.keys(PILLAR_META) as FamePillar[]
+const PILLAR_KEYS = Object.keys(PILLAR_META) as Pillar[]
 
 /**
  * Data-access layer.
@@ -129,7 +129,7 @@ export async function getMemberById(id: string): Promise<Member | null> {
   return members.find((m) => m.id === id) ?? null
 }
 
-export type PillarProgress = Record<FamePillar, number>
+export type PillarProgress = Record<Pillar, number>
 
 /**
  * Count a member's APPROVED submissions per F.A.M.E. pillar. This is the

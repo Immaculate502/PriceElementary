@@ -5,7 +5,7 @@ import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
 import { AlertCircle, ArrowLeft, Lock } from "lucide-react"
 import { unlockAdmin, type AdminActionResult } from "@/app/(admin)/admin/admin-actions"
-import { FameEmblem } from "./fame-emblem"
+import { RootedEmblem } from "./rooted-emblem"
 import { Button } from "@/components/ui/button"
 
 function UnlockButton() {
@@ -31,7 +31,7 @@ export function AdminLoginForm() {
     <div className="w-full max-w-md">
       <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <FameEmblem size={64} priority />
+          <RootedEmblem size={64} priority />
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Restricted
           </p>

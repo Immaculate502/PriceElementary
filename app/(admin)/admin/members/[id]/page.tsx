@@ -95,9 +95,9 @@ export default async function MemberDetailPage({
               {initials}
             </div>
             <div>
-              <p className="font-medium text-foreground">Progress by pillar</p>
+              <p className="font-medium text-foreground">Progress by growth area</p>
               <p className="text-sm text-muted-foreground">
-                Approved submissions in each F.A.M.E. area
+                Approved submissions in each growth area
               </p>
             </div>
           </div>

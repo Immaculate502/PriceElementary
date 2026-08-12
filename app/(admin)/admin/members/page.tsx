@@ -21,7 +21,7 @@ export default async function MembersPage() {
       <PageHeader
         eyebrow="Leadership"
         title="Members"
-        description="Monitor each member's progress across the four F.A.M.E. pillars. Select a member to review their full history and messages."
+        description="Monitor each member's progress across the four growth areas. Select a member to review their full history and messages."
       />
 
       {members.length === 0 && (

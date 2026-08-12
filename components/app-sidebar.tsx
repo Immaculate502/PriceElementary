@@ -14,11 +14,11 @@ import {
   Sparkles,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FameEmblem } from "./fame-emblem"
+import { RootedEmblem } from "./rooted-emblem"
 
 const memberLinks = [
   { href: "/", label: "Dashboard", icon: Home },
-  { href: "/activities", label: "F.A.M.E. Activities", icon: ListChecks },
+  { href: "/activities", label: "Activities", icon: ListChecks },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/bible-study", label: "Bible Study", icon: BookOpen },
   { href: "/reading-plan", label: "Lessons", icon: GraduationCap },
@@ -34,9 +34,11 @@ export function AppSidebar() {
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground lg:flex">
       <div className="flex items-center gap-3 px-6 py-6">
-        <FameEmblem size={48} priority />
+        <RootedEmblem size={48} priority />
         <div className="leading-tight">
-          <p className="font-display text-lg font-semibold text-sidebar-foreground">F.A.M.E.</p>
+          <p className="font-display text-lg font-semibold tracking-wide text-sidebar-foreground">
+            ROOTED
+          </p>
           <p className="text-xs text-sidebar-foreground/60">Spiritual Growth Portal</p>
         </div>
       </div>

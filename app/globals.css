@@ -68,8 +68,8 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.004 84);
 
-  /* Black primary */
-  --primary: oklch(0.2 0.004 84);
+  /* Forest green primary, taken from the ROOTED emblem */
+  --primary: oklch(0.32 0.058 158);
   --primary-foreground: oklch(0.98 0.01 84);
 
   --secondary: oklch(0.95 0.012 84);
@@ -91,25 +91,25 @@
 
   --gold: oklch(0.79 0.13 80);
   --gold-foreground: oklch(0.18 0.004 84);
-  /* "navy" tokens repurposed as the emblem's black surface */
-  --navy: oklch(0.19 0.004 84);
+  /* "navy" tokens repurposed as the emblem's deep forest green surface */
+  --navy: oklch(0.3 0.055 158);
   --navy-foreground: oklch(0.97 0.012 84);
   --success: oklch(0.55 0.09 165);
   --success-foreground: oklch(0.98 0.01 165);
   --warning: oklch(0.62 0.14 27);
   --warning-foreground: oklch(0.98 0.01 27);
 
-  /* F.A.M.E. pillar colors */
+  /* Growth area colors */
   --pillar-faith: oklch(0.55 0.13 264);
   --pillar-action: oklch(0.6 0.14 40);
   --pillar-ministry: oklch(0.55 0.09 165);
   --pillar-evangelism: oklch(0.62 0.15 20);
 
-  --sidebar: oklch(0.17 0.004 84);
-  --sidebar-foreground: oklch(0.9 0.008 84);
-  --sidebar-accent: oklch(0.26 0.006 84);
+  --sidebar: oklch(0.26 0.05 158);
+  --sidebar-foreground: oklch(0.92 0.014 84);
+  --sidebar-accent: oklch(0.35 0.06 158);
   --sidebar-accent-foreground: oklch(0.98 0.01 84);
-  --sidebar-border: oklch(0.3 0.006 84);
+  --sidebar-border: oklch(0.38 0.052 158);
 }
 
 @layer base {

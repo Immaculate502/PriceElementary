@@ -1,7 +1,7 @@
 import { Flame, Mail, ShieldCheck } from "lucide-react"
 import { Card, PageHeader, PillarBadge } from "@/components/ui-kit"
 import { getCurrentMember, getSubmissions } from "@/lib/data"
-import { PILLAR_META, type FamePillar } from "@/lib/types"
+import { PILLAR_META, type Pillar } from "@/lib/types"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -20,7 +20,7 @@ export default async function ProfilePage() {
     .slice(0, 2)
     .join("")
 
-  const pillars = Object.keys(PILLAR_META) as FamePillar[]
+  const pillars = Object.keys(PILLAR_META) as Pillar[]
   const byPillar = pillars.map((p) => ({
     pillar: p,
     count: submissions.filter((s) => s.pillar === p).length,
@@ -67,7 +67,7 @@ export default async function ProfilePage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="font-display text-xl font-semibold text-foreground">
-          Growth across the pillars
+          Growth across the four areas
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {byPillar.map(({ pillar, count }) => (
