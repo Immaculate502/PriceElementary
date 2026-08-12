@@ -23,11 +23,21 @@ type SendArgs = {
   replyTo?: string
 }
 
-export type SendResult = { ok: boolean; error?: string }
+export type SendResult = {
+  ok: boolean
+  error?: string
+  /**
+   * True when the send failed because of how the app is configured (bad API key,
+   * unverified sender domain) rather than anything about the recipient. Callers
+   * use this to tell a member "we couldn't send" instead of silently claiming
+   * success — it reveals nothing about whether the address exists.
+   */
+  configError?: boolean
+}
 
 export async function sendEmail({ to, subject, html, text, replyTo }: SendArgs): Promise<SendResult> {
   if (!isEmailConfigured()) {
-    return { ok: false, error: "Email is not configured." }
+    return { ok: false, error: "Email is not configured.", configError: true }
   }
 
   try {
@@ -53,7 +63,13 @@ export async function sendEmail({ to, subject, html, text, replyTo }: SendArgs):
       // Resend returns a JSON error body; surface its message for the server log
       // without leaking it to the end user.
       const detail = await res.text().catch(() => "")
-      return { ok: false, error: `Resend responded ${res.status}: ${detail}` }
+
+      // 401 = bad API key, 403 = sender domain not verified. Both mean no mail
+      // will ever reach anyone until it's fixed, so don't report success.
+      const configError =
+        res.status === 401 || res.status === 403 || /not verified|domain/i.test(detail)
+
+      return { ok: false, error: `Resend responded ${res.status}: ${detail}`, configError }
     }
 
     return { ok: true }

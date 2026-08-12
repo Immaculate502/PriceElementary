@@ -182,10 +182,20 @@ export async function requestPasswordReset(
         const { subject, html, text } = passwordResetEmail(link)
         const sent = await sendEmail({ to: email, subject, html, text })
 
-        // Log delivery failures server-side; the member still sees the generic
-        // message rather than a scary error they can't act on.
         if (!sent.ok) {
           console.log("[v0] Resend delivery failed:", sent.error)
+
+          // A misconfigured sender means nobody will ever get mail. Claiming
+          // "a reset link is on its way" would leave the member refreshing an
+          // inbox forever, so say plainly that it failed. This is a property of
+          // our setup, not of their account, so it enables no enumeration.
+          if (sent.configError) {
+            return {
+              ok: false,
+              message:
+                "We could not send the reset email — our mail service is misconfigured. Please contact the church office so we can reset your password for you.",
+            }
+          }
         }
       }
     }
