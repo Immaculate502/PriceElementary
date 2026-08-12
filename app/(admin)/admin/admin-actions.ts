@@ -312,7 +312,7 @@ async function syncQuestions(
   supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseServerClient>>>,
   lessonId: string,
   drafts: QuestionDraft[],
-) {
+): Promise<{ error?: string }> {
   const { data: existingRows } = await supabase
     .from("lesson_questions")
     .select("id")
@@ -332,22 +332,34 @@ async function syncQuestions(
 
     // Only trust an id that really belongs to this lesson.
     if (draft.id && existingIds.has(draft.id)) {
-      await supabase.from("lesson_questions").update(row).eq("id", draft.id)
+      const { error } = await supabase
+        .from("lesson_questions")
+        .update(row)
+        .eq("id", draft.id)
+      if (error) return { error: error.message }
       keptIds.push(draft.id)
     } else {
-      const { data: inserted } = await supabase
+      const { data: inserted, error } = await supabase
         .from("lesson_questions")
         .insert({ ...row, lesson_id: lessonId })
         .select("id")
         .single()
-      if (inserted?.id) keptIds.push(inserted.id as string)
+      if (error || !inserted?.id) {
+        return { error: error?.message ?? "Could not save a question." }
+      }
+      keptIds.push(inserted.id as string)
     }
   }
 
+  // Only reached once every question saved, so a failure above can never
+  // delete the questions (and their answers) we were trying to keep.
   const removed = [...existingIds].filter((id) => !keptIds.includes(id))
   if (removed.length > 0) {
-    await supabase.from("lesson_questions").delete().in("id", removed)
+    const { error } = await supabase.from("lesson_questions").delete().in("id", removed)
+    if (error) return { error: error.message }
   }
+
+  return {}
 }
 
 export async function createLesson(
@@ -378,7 +390,8 @@ export async function createLesson(
     return { ok: false, message: error?.message ?? "Could not create the lesson." }
   }
 
-  await syncQuestions(supabase, created.id, parsed.questions)
+  const synced = await syncQuestions(supabase, created.id, parsed.questions)
+  if (synced.error) return { ok: false, message: synced.error }
 
   revalidatePath("/admin/lessons")
   revalidatePath("/reading-plan")
@@ -401,7 +414,8 @@ export async function updateLesson(
   const { error } = await supabase.from("lessons").update(parsed.values).eq("id", id)
   if (error) return { ok: false, message: error.message }
 
-  await syncQuestions(supabase, id, parsed.questions)
+  const synced = await syncQuestions(supabase, id, parsed.questions)
+  if (synced.error) return { ok: false, message: synced.error }
 
   revalidatePath("/admin/lessons")
   revalidatePath(`/admin/lessons/${id}`)
