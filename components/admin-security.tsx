@@ -39,7 +39,7 @@ export function AdminSecurity() {
           <div>
             <p className="font-medium text-foreground">Security</p>
             <p className="text-sm text-muted-foreground">
-              Manage the administrator password and session.
+              Change your own leader login password.
             </p>
           </div>
         </div>
@@ -58,19 +58,6 @@ export function AdminSecurity() {
 
       {open && (
         <form action={formAction} className="mt-5 grid max-w-md gap-4 border-t border-border pt-5">
-          <div className="grid gap-2">
-            <label htmlFor="current" className="text-sm font-medium text-foreground">
-              Current password
-            </label>
-            <input
-              id="current"
-              name="current"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none ring-ring/30 focus:ring-2"
-            />
-          </div>
           <div className="grid gap-2">
             <label htmlFor="next" className="text-sm font-medium text-foreground">
               New password

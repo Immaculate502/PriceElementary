@@ -354,14 +354,13 @@ export async function getVocalVideos(options?: {
 
   let supabase
   if (forLeadership) {
-    // Imported lazily so the member pages never pull in cookie-reading
-    // admin-auth or the service-role client.
-    const [{ isAdminUnlocked }, { getSupabaseAdminClient }] = await Promise.all([
-      import("./admin-auth"),
-      import("./supabase/admin"),
-    ])
+    // Leaders are real `role = 'admin'` profiles, so their own session client is
+    // used. The church-scoped RLS select policy limits results to videos in the
+    // leader's church — no service-role bypass, no cross-tenant exposure.
+    // Imported lazily so member pages never pull in cookie-reading admin-auth.
+    const { isAdminUnlocked } = await import("./admin-auth")
     if (!(await isAdminUnlocked())) return []
-    supabase = getSupabaseAdminClient() ?? (await getSupabaseServerClient())
+    supabase = await getSupabaseServerClient()
   } else {
     supabase = await getSupabaseServerClient()
   }

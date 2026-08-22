@@ -1,49 +1,45 @@
 "use server"
 
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import {
-  UNLOCK_COOKIE,
-  PW_OVERRIDE_COOKIE,
-  SESSION_MAX_AGE,
-  getCurrentPasswordHash,
-  hashPassword,
-  isAdminUnlocked,
-  unlockToken,
-  verifyAdminPassword,
-} from "@/lib/admin-auth"
+import { isAdminUnlocked } from "@/lib/admin-auth"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
-import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { MAX_OPTIONS, MIN_OPTIONS } from "@/lib/lesson-grading"
 import type { QuestionKind } from "@/lib/types"
 
 export type AdminActionResult = { ok: boolean; message: string }
 
-const secureCookie = process.env.NODE_ENV === "production"
-
 export async function unlockAdmin(
   _prev: AdminActionResult | null,
   formData: FormData,
 ): Promise<AdminActionResult> {
+  const email = String(formData.get("email") ?? "").trim()
   const password = String(formData.get("password") ?? "")
-  if (!(await verifyAdminPassword(password))) {
-    return { ok: false, message: "Incorrect password. Please try again." }
+
+  if (!email || !password) {
+    return { ok: false, message: "Enter your leader email and password." }
+  }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to sign in to the console." }
   }
 
-  const hash = await getCurrentPasswordHash()
-  const store = await cookies()
-  store.set(UNLOCK_COOKIE, unlockToken(hash), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: secureCookie,
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  })
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Auth unavailable." }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) return { ok: false, message: "Incorrect email or password." }
+
+  // Only church leaders and platform super-admins may enter the console.
+  if (!(await isAdminUnlocked())) {
+    await supabase.auth.signOut()
+    return {
+      ok: false,
+      message: "That account is not a leader for any church.",
+    }
+  }
 
   revalidatePath("/admin")
-  // Sign-in lives on its own page now, so send the leader straight into the console.
   redirect("/admin")
 }
 
@@ -495,8 +491,10 @@ export async function moderateLessonResponse(
 }
 
 export async function lockAdmin(): Promise<void> {
-  const store = await cookies()
-  store.delete(UNLOCK_COOKIE)
+  if (isSupabaseConfigured()) {
+    const supabase = await getSupabaseServerClient()
+    await supabase?.auth.signOut()
+  }
   revalidatePath("/admin")
   redirect("/admin/login")
 }
@@ -548,69 +546,33 @@ export async function changeAdminPassword(
   formData: FormData,
 ): Promise<AdminActionResult> {
   if (!(await isAdminUnlocked())) {
-    return { ok: false, message: "Unlock the admin area before changing the password." }
+    return { ok: false, message: "Sign in to the Leadership Console first." }
   }
 
-  const current = String(formData.get("current") ?? "")
   const next = String(formData.get("next") ?? "")
   const confirm = String(formData.get("confirm") ?? "")
 
-  if (!(await verifyAdminPassword(current))) {
-    return { ok: false, message: "Current password is incorrect." }
-  }
   if (next.length < 8) {
     return { ok: false, message: "New password must be at least 8 characters." }
   }
   if (next !== confirm) {
     return { ok: false, message: "New passwords do not match." }
   }
-  if (await verifyAdminPassword(next)) {
-    return { ok: false, message: "New password must be different from the current one." }
+
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to change your password." }
   }
 
-  const newHash = hashPassword(next)
-  const store = await cookies()
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
 
-  if (isSupabaseConfigured()) {
-    // Knowing the current password is the authorization boundary here — it was
-    // verified above — so write with the service-role client. `app_settings` is
-    // RLS-restricted to `is_admin()`, and the password gate exists precisely so
-    // leadership can administer the console without every member profile being
-    // promoted to admin. Using the caller's client would fail the RLS check and
-    // leave the password unchangeable from the UI.
-    const privileged = getSupabaseAdminClient()
-    const supabase = privileged ?? (await getSupabaseServerClient())
-    if (!supabase) return { ok: false, message: "Supabase client unavailable." }
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert({ key: "admin_password_hash", value: newHash }, { onConflict: "key" })
-    if (error) return { ok: false, message: error.message }
-  } else {
-    store.set(PW_OVERRIDE_COOKIE, newHash, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: secureCookie,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-    })
-  }
-
-  // Re-issue the unlock cookie against the new hash so this session stays valid.
-  store.set(UNLOCK_COOKIE, unlockToken(newHash), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: secureCookie,
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  })
+  // This updates the signed-in leader's own login credentials. Supabase manages
+  // the password hash and session; there is no shared console password anymore.
+  const { error } = await supabase.auth.updateUser({ password: next })
+  if (error) return { ok: false, message: error.message }
 
   revalidatePath("/admin")
-  return {
-    ok: true,
-    message: isSupabaseConfigured()
-      ? "Admin password updated."
-      : "Password updated for this browser (demo mode). Connect Supabase to share it across all leadership devices.",
-  }
+  return { ok: true, message: "Your leader password has been updated." }
 }
 
 // ---------------------------------------------------------------------------
@@ -620,11 +582,10 @@ export async function changeAdminPassword(
 /**
  * Mark a VOCAL video reviewed, or move it back to the queue.
  *
- * Unlocking the console is the authorization check here, so the write goes
- * through the service-role client: `vocal_videos` UPDATE is RLS-restricted to
- * `is_admin()`, and a leader holding the shared password may not have an
- * `admin` profile row. Without this the button would fail for exactly the
- * people it exists for.
+ * The leader is a real `role = 'admin'` profile, so their session client is
+ * used directly. The church-scoped RLS `vocal_videos` update policy guarantees
+ * a leader can only touch videos belonging to their own church — no
+ * service-role bypass, no cross-tenant access.
  */
 export async function setVocalReviewed(
   _prev: AdminActionResult | null,
@@ -641,7 +602,7 @@ export async function setVocalReviewed(
   const reviewed = String(formData.get("reviewed") ?? "") === "true"
   if (!id) return { ok: false, message: "Missing video." }
 
-  const supabase = getSupabaseAdminClient() ?? (await getSupabaseServerClient())
+  const supabase = await getSupabaseServerClient()
   if (!supabase) return { ok: false, message: "Supabase client unavailable." }
 
   const { error } = await supabase
