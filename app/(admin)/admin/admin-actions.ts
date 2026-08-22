@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { isAdminUnlocked } from "@/lib/admin-auth"
+import { getTenantContext } from "@/lib/tenant"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { MAX_OPTIONS, MIN_OPTIONS } from "@/lib/lesson-grading"
@@ -31,12 +32,19 @@ export async function unlockAdmin(
   if (error) return { ok: false, message: "Incorrect email or password." }
 
   // Only church leaders and platform super-admins may enter the console.
-  if (!(await isAdminUnlocked())) {
+  const ctx = await getTenantContext()
+  if (!ctx || (!ctx.isSuperAdmin && ctx.role !== "admin")) {
     await supabase.auth.signOut()
     return {
       ok: false,
       message: "That account is not a leader for any church.",
     }
+  }
+
+  // Platform super-admins manage every church; church leaders get their console.
+  if (ctx.isSuperAdmin) {
+    revalidatePath("/platform")
+    redirect("/platform")
   }
 
   revalidatePath("/admin")

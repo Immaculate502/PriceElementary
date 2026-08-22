@@ -1,7 +1,6 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
@@ -163,12 +162,3 @@ export async function joinChurch(
 
   redirect("/")
 }
-
-function originFrom(requestHeaders: Headers): string {
-  const origin = requestHeaders.get("origin")
-  if (origin) return origin
-  const host = requestHeaders.get("host")
-  return host ? `https://${host}` : ""
-}
-
-export { originFrom }

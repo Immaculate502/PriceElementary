@@ -155,12 +155,15 @@ export function BillingPanel({
               <Copy className="h-4 w-4" />
               {copied ? "Copied!" : "Copy"}
             </Button>
-            <Button asChild variant="outline" className="gap-2">
-              <a href={inviteUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4" />
-                Open
-              </a>
-            </Button>
+            <a
+              href={inviteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open
+            </a>
           </div>
         </div>
       )}

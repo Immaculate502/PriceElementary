@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { ChurchSignupForm } from "@/components/church-signup-form"
 import { RootedEmblem } from "@/components/rooted-emblem"
+import { PLAN, formatUsd } from "@/lib/billing"
 
 export const metadata: Metadata = {
   title: "Start your church on ROOTED",
@@ -22,6 +23,18 @@ export default function SignupPage() {
         <p className="mt-1 text-sm text-muted-foreground text-pretty">
           Create your church workspace and become its first leader. You&apos;ll set up billing on
           the next step, then invite your members.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-sm text-foreground">
+          <span className="font-display text-lg font-semibold">{formatUsd(PLAN.monthlyAmount)}</span>
+          <span className="text-muted-foreground">{" / month"}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {"Plus a one-time "}
+          {formatUsd(PLAN.setupFeeAmount)}
+          {" setup fee. Unlimited members. Cancel anytime."}
         </p>
       </div>
 
