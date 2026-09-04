@@ -39,14 +39,29 @@ export function AdminLoginForm() {
             Leadership Console
           </h1>
           <p className="mt-2 text-sm text-muted-foreground text-pretty">
-            Enter the administrator password to manage members, activities and lessons.
+            Sign in with your leader account to manage members, activities and lessons.
           </p>
         </div>
 
         <form action={formAction} className="grid gap-4">
           <div className="grid gap-2">
+            <label htmlFor="admin-email" className="text-sm font-medium text-foreground">
+              Leader email
+            </label>
+            <input
+              id="admin-email"
+              name="email"
+              type="email"
+              required
+              autoFocus
+              autoComplete="email"
+              placeholder="you@church.org"
+              className="w-full rounded-lg border border-input bg-background py-2.5 px-3 text-sm outline-none ring-ring/30 focus:ring-2"
+            />
+          </div>
+          <div className="grid gap-2">
             <label htmlFor="admin-password" className="text-sm font-medium text-foreground">
-              Administrator password
+              Password
             </label>
             <div className="relative">
               <Lock
@@ -58,7 +73,6 @@ export function AdminLoginForm() {
                 name="password"
                 type="password"
                 required
-                autoFocus
                 autoComplete="current-password"
                 placeholder="Enter password"
                 className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm outline-none ring-ring/30 focus:ring-2"

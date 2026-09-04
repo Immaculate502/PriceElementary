@@ -33,10 +33,19 @@ export async function proxy(request: NextRequest) {
   // Signed-out pages. /reset-password is deliberately NOT here: the recovery
   // link creates a session first, so treating it as an auth route would bounce
   // the member straight to the dashboard before they could set a password.
-  const isAuthRoute = path === "/login" || path === "/signup" || path === "/forgot-password"
+  const isAuthRoute =
+    path === "/login" ||
+    path === "/signup" ||
+    path === "/forgot-password" ||
+    // New members open a church invite link while signed out.
+    path.startsWith("/join/")
   // The OAuth callback runs BEFORE a session exists, so it must stay reachable
-  // while unauthenticated or Google sign-in would loop back to /login.
-  const isPublicRoute = path.startsWith("/auth/")
+  // while unauthenticated or Google sign-in would loop back to /login. Stripe
+  // webhooks hit /api/ with no session, so those must pass through too. The
+  // leadership sign-in (/admin/login) manages its own role-based redirects, so
+  // it must stay reachable whether or not a session exists.
+  const isPublicRoute =
+    path.startsWith("/auth/") || path.startsWith("/api/") || path === "/admin/login"
 
   if (isPublicRoute) {
     return response

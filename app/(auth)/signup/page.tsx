@@ -1,10 +1,14 @@
-import { AuthForm } from "@/components/auth-form"
+import type { Metadata } from "next"
+import { ChurchSignupForm } from "@/components/church-signup-form"
 import { RootedEmblem } from "@/components/rooted-emblem"
-import { isOAuthProviderEnabled } from "@/lib/supabase/oauth-status"
+import { PLAN, formatUsd } from "@/lib/billing"
 
-export default async function SignupPage() {
-  const googleEnabled = await isOAuthProviderEnabled("google")
+export const metadata: Metadata = {
+  title: "Start your church on ROOTED",
+  description: "Register your church and set up discipleship for your youth ministry.",
+}
 
+export default function SignupPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 lg:hidden">
@@ -15,13 +19,26 @@ export default async function SignupPage() {
       </div>
 
       <div>
-        <h1 className="font-display text-2xl font-semibold text-foreground">Join the community</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create your account and begin growing across all four growth areas.
+        <h1 className="font-display text-2xl font-semibold text-foreground">Start your church</h1>
+        <p className="mt-1 text-sm text-muted-foreground text-pretty">
+          Create your church workspace and become its first leader. You&apos;ll set up billing on
+          the next step, then invite your members.
         </p>
       </div>
 
-      <AuthForm mode="signup" googleEnabled={googleEnabled} />
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-sm text-foreground">
+          <span className="font-display text-lg font-semibold">{formatUsd(PLAN.monthlyAmount)}</span>
+          <span className="text-muted-foreground">{" / month"}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {"Plus a one-time "}
+          {formatUsd(PLAN.setupFeeAmount)}
+          {" setup fee. Unlimited members. Cancel anytime."}
+        </p>
+      </div>
+
+      <ChurchSignupForm />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Mic,
+  Rocket,
   ShieldCheck,
   Users,
 } from "lucide-react"
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils"
  */
 export const adminNavLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/setup", label: "Setup", icon: Rocket, exact: true },
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/vocal", label: "VOCAL", icon: Mic },
   { href: "/admin/activities", label: "Activities", icon: ClipboardList },

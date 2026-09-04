@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { isAdminUnlocked } from "@/lib/admin-auth"
+import { getTenantContext, getCurrentChurch, churchIsEntitled } from "@/lib/tenant"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin-header"
 
@@ -22,6 +23,14 @@ export default async function AdminPortalLayout({
   children: React.ReactNode
 }) {
   if (!(await isAdminUnlocked())) redirect("/admin/login")
+
+  // Church leaders must have an active subscription to use the console.
+  // Platform super-admins bypass billing entirely.
+  const ctx = await getTenantContext()
+  if (ctx && !ctx.isSuperAdmin) {
+    const church = await getCurrentChurch()
+    if (!churchIsEntitled(church)) redirect("/billing")
+  }
 
   return (
     <div className="flex min-h-screen">
