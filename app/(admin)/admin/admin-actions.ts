@@ -676,10 +676,15 @@ export async function renameChurch(
     return { ok: false, message: "Connect Supabase to rename your church." }
   }
 
-  const supabase = await getSupabaseServerClient()
-  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+  // The churches table has no member-facing UPDATE policy (to keep billing
+  // columns tamper-proof). The caller is already verified as this church's
+  // admin above, and the write is scoped to their own church id and sets only
+  // the name, so the service-role client is the right tool here.
+  const { getSupabaseAdminClient } = await import("@/lib/supabase/admin")
+  const admin = getSupabaseAdminClient()
+  if (!admin) return { ok: false, message: "Supabase admin client unavailable." }
 
-  const { error } = await supabase.from("churches").update({ name }).eq("id", ctx.churchId)
+  const { error } = await admin.from("churches").update({ name }).eq("id", ctx.churchId)
   if (error) return { ok: false, message: error.message }
 
   revalidatePath("/admin")
