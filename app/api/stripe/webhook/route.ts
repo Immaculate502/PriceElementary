@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
+import { seedChurchActivities } from "@/lib/seed-activities"
 
 // Stripe requires the raw request body to verify the signature.
 export const dynamic = "force-dynamic"
@@ -82,6 +83,28 @@ export async function POST(req: Request) {
 
         if (churchId) await patchChurchById(churchId, patch)
         else if (customerId) await patchChurchByCustomer(customerId, patch)
+
+        // First successful payment: give the church its starter FAME activities.
+        // Idempotent — seedChurchActivities no-ops if the church already has any.
+        if (status === "active") {
+          const admin = getSupabaseAdminClient()
+          let targetId = churchId
+          if (!targetId && customerId && admin) {
+            const { data } = await admin
+              .from("churches")
+              .select("id")
+              .eq("stripe_customer_id", customerId)
+              .maybeSingle()
+            targetId = data?.id
+          }
+          if (targetId && admin) {
+            try {
+              await seedChurchActivities(admin, targetId)
+            } catch (seedErr) {
+              console.log("[v0] Activity seed skipped:", seedErr instanceof Error ? seedErr.message : seedErr)
+            }
+          }
+        }
         break
       }
 

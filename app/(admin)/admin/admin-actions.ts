@@ -627,3 +627,62 @@ export async function setVocalReviewed(
     message: reviewed ? "Marked reviewed." : "Moved back to the queue.",
   }
 }
+
+/**
+ * Load this church's starter FAME activities into its own catalog. Runs from
+ * the setup wizard; safe to call repeatedly (no-ops once activities exist).
+ */
+export async function seedStarterActivities(): Promise<AdminActionResult> {
+  const ctx = await getTenantContext()
+  if (!ctx || (!ctx.isSuperAdmin && ctx.role !== "admin")) {
+    return { ok: false, message: "Sign in to the Leadership Console first." }
+  }
+  if (!ctx.churchId) return { ok: false, message: "No church is linked to your account." }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to add starter activities." }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const { seedChurchActivities } = await import("@/lib/seed-activities")
+  try {
+    const { seeded } = await seedChurchActivities(supabase, ctx.churchId)
+    revalidatePath("/admin")
+    revalidatePath("/admin/activities")
+    return {
+      ok: true,
+      message: seeded > 0 ? `Added ${seeded} starter activities.` : "Your catalog already has activities.",
+    }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Could not add activities." }
+  }
+}
+
+/** Rename the caller's church from the setup wizard. */
+export async function renameChurch(
+  _prev: AdminActionResult | null,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  const ctx = await getTenantContext()
+  if (!ctx || ctx.role !== "admin") {
+    return { ok: false, message: "Sign in to the Leadership Console first." }
+  }
+  if (!ctx.churchId) return { ok: false, message: "No church is linked to your account." }
+
+  const name = String(formData.get("name") ?? "").trim()
+  if (name.length < 2) return { ok: false, message: "Enter a church name." }
+  if (!isSupabaseConfigured()) {
+    return { ok: false, message: "Connect Supabase to rename your church." }
+  }
+
+  const supabase = await getSupabaseServerClient()
+  if (!supabase) return { ok: false, message: "Supabase client unavailable." }
+
+  const { error } = await supabase.from("churches").update({ name }).eq("id", ctx.churchId)
+  if (error) return { ok: false, message: error.message }
+
+  revalidatePath("/admin")
+  revalidatePath("/admin/setup")
+  return { ok: true, message: "Church name updated." }
+}
