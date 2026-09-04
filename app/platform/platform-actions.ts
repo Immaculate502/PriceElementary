@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin"
 import { isSuperAdmin } from "@/lib/tenant"
+import { PLAN } from "@/lib/billing"
 
 export type PlatformResult = { ok: boolean; message: string }
 
@@ -24,6 +25,8 @@ export type PlatformStats = {
   activeChurches: number
   suspendedChurches: number
   totalMembers: number
+  /** Estimated monthly recurring revenue in cents (active churches × plan price). */
+  mrrCents: number
 }
 
 /**
@@ -36,7 +39,7 @@ export async function listChurches(): Promise<{
 }> {
   const empty = {
     churches: [],
-    stats: { totalChurches: 0, activeChurches: 0, suspendedChurches: 0, totalMembers: 0 },
+    stats: { totalChurches: 0, activeChurches: 0, suspendedChurches: 0, totalMembers: 0, mrrCents: 0 },
   }
   if (!(await isSuperAdmin())) return empty
 
@@ -75,6 +78,11 @@ export async function listChurches(): Promise<{
     (r) => !r.suspended && ["trialing", "active", "past_due"].includes(r.subscriptionStatus ?? ""),
   ).length
 
+  // MRR only counts churches actually paying (active/past_due), not trials.
+  const paying = rows.filter(
+    (r) => !r.suspended && ["active", "past_due"].includes(r.subscriptionStatus ?? ""),
+  ).length
+
   return {
     churches: rows,
     stats: {
@@ -82,6 +90,7 @@ export async function listChurches(): Promise<{
       activeChurches: active,
       suspendedChurches: rows.filter((r) => r.suspended).length,
       totalMembers: rows.reduce((sum, r) => sum + r.memberCount, 0),
+      mrrCents: paying * PLAN.monthlyAmount,
     },
   }
 }

@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react"
 import { useFormStatus } from "react-dom"
-import { AlertCircle, CheckCircle2, Copy, ExternalLink } from "lucide-react"
+import { AlertCircle, ArrowRight, CheckCircle2, Copy, ExternalLink } from "lucide-react"
 import { startCheckout, openBillingPortal, type BillingResult } from "@/app/billing/billing-actions"
 import { Button } from "@/components/ui/button"
 
@@ -165,6 +165,14 @@ export function BillingPanel({
               Open
             </a>
           </div>
+
+          <a
+            href="/admin/setup"
+            className="mt-5 inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
+          >
+            Continue to church setup
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
         </div>
       )}
     </div>

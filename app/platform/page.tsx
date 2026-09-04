@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { Building2, Users, ShieldCheck, ShieldAlert } from "lucide-react"
+import { Building2, Users, ShieldCheck, ShieldAlert, DollarSign } from "lucide-react"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { isSuperAdmin } from "@/lib/tenant"
+import { formatUsd } from "@/lib/billing"
 import { listChurches } from "./platform-actions"
 import { PlatformChurchTable } from "@/components/platform-church-table"
 import { RootedEmblem } from "@/components/rooted-emblem"
@@ -21,10 +22,11 @@ export default async function PlatformPage() {
   const { churches, stats } = await listChurches()
 
   const cards = [
-    { label: "Churches", value: stats.totalChurches, icon: Building2 },
-    { label: "Active", value: stats.activeChurches, icon: ShieldCheck },
-    { label: "Suspended", value: stats.suspendedChurches, icon: ShieldAlert },
-    { label: "Total members", value: stats.totalMembers, icon: Users },
+    { label: "Churches", value: String(stats.totalChurches), icon: Building2 },
+    { label: "Active", value: String(stats.activeChurches), icon: ShieldCheck },
+    { label: "MRR", value: formatUsd(stats.mrrCents), icon: DollarSign },
+    { label: "Suspended", value: String(stats.suspendedChurches), icon: ShieldAlert },
+    { label: "Total members", value: String(stats.totalMembers), icon: Users },
   ]
 
   return (
@@ -52,7 +54,7 @@ export default async function PlatformPage() {
           </form>
         </header>
 
-        <section className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <section className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {cards.map(({ label, value, icon: Icon }) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between">
