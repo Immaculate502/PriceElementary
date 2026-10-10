@@ -4,7 +4,7 @@ export const runtime='nodejs';
 export const maxDuration=60;
 export async function POST(request){
  try{
-  authorize(request);
+  await authorize();
   if(!process.env.OPENAI_API_KEY || !process.env.OPENAI_MODEL)throw new AppError('Set OPENAI_API_KEY and OPENAI_MODEL on the server.',503);
   const lesson=validateLesson(await readBody(request));
   if(!lesson.fields.Title.trim()&&!lesson.fields.Topic.trim()&&!lesson.fields['Foundational reference'].trim())throw new AppError('Enter a title, topic, or foundational scripture.');

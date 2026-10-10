@@ -9,7 +9,7 @@ function buildPrompt(title,script){
 }
 export async function POST(request){
  try{
-  authorize(request);
+  await authorize();
   const body=await readBody(request);
   if(body.reviewed!==true)throw new AppError('Review and approve the narration before generating a video.');
   if(typeof body.script!=='string'||!body.script.trim()||body.script.length>4500)throw new AppError('Narration must contain 1-4500 characters.');
@@ -31,7 +31,7 @@ export async function POST(request){
 }
 export async function GET(request){
  try{
-  authorize(request);
+  await authorize();
   const token=new URL(request.url).searchParams.get('job')||'';
   const id=readJob(token);
   const json=await providerJSON(BASE+'/'+encodeURIComponent(id)+'/status',{headers:headers()});

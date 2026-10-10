@@ -1,8 +1,8 @@
 /* Scoped under .studio so these element styles never leak into the rest of the Rooted app. */
-.studio{--ink:#173b32;--green:#173b32;--gold:#b68a3e;--paper:#f6f4ed;box-sizing:border-box;max-width:1260px;margin:auto;padding:32px;color:var(--ink);font-family:var(--font-sans),Arial,sans-serif;min-height:100vh}
+.studio{--ink:#173b32;--green:#173b32;--gold:#b68a3e;--paper:#f6f4ed;box-sizing:border-box;margin:auto;padding:0;color:var(--ink);font-family:var(--font-sans),Arial,sans-serif}
 .studio *{box-sizing:border-box}
 body:has(.studio){background:#f6f4ed}
-.studio header{padding:38px 0}
+.studio header{padding:8px 0 28px}
 .studio .brand{letter-spacing:3px;font-weight:800}
 .studio .brand span{font-size:11px;margin-left:12px;color:#6b786c}
 .studio h1{font-family:var(--font-serif),Georgia,serif;font-size:clamp(38px,5vw,66px);font-weight:500;line-height:1.07;margin:26px 0 18px}
