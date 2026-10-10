@@ -8,7 +8,10 @@ import "server-only"
  * otherwise Resend rejects the send.
  */
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? ""
-const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? ""
+// Falls back to the domain already verified in Resend so an empty
+// RESEND_FROM_EMAIL doesn't silently disable every outgoing email.
+const RESEND_FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL?.trim() || "Rooted <no-reply@rootedministry.online>"
 
 export function isEmailConfigured() {
   return RESEND_API_KEY.length > 0 && RESEND_FROM_EMAIL.length > 0
