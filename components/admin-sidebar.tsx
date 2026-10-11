@@ -11,6 +11,7 @@ import {
   Mic,
   Rocket,
   ShieldCheck,
+  Sparkles,
   Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -27,6 +28,7 @@ export const adminNavLinks = [
   { href: "/admin/activities", label: "Activities", icon: ClipboardList },
   { href: "/admin/lessons", label: "Lessons", icon: GraduationCap, exact: true },
   { href: "/admin/lessons/responses", label: "Review answers", icon: FileCheck2 },
+  { href: "/admin/lesson-builder", label: "Lesson Builder", icon: Sparkles },
 ]
 
 export function isAdminLinkActive(

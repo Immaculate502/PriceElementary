@@ -10,6 +10,7 @@ import {
   Home,
   ListChecks,
   MessageSquareQuote,
+  MessagesSquare,
   Mic,
   NotebookPen,
   Sparkles,
@@ -28,6 +29,7 @@ const memberLinks = [
   { href: "/prayer-requests", label: "Prayer Requests", icon: HandHeart },
   { href: "/prayer-schedule", label: "Prayer Schedule", icon: CalendarClock },
   { href: "/testimonies", label: "Testimonies", icon: MessageSquareQuote },
+  { href: "/community", label: "Community", icon: MessagesSquare },
 ]
 
 export function AppSidebar() {

@@ -144,7 +144,11 @@ export async function requestPasswordReset(
     requestHeaders.get("origin") ??
     (requestHeaders.get("host") ? `https://${requestHeaders.get("host")}` : "")
 
-  const base = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${origin}/auth/callback`
+  // The v0 redirect proxy only exists for the preview; in production the link
+  // must point at the live site or members land on a v0 page.
+  const devRedirect =
+    process.env.NODE_ENV !== "production" ? process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL : ""
+  const base = devRedirect || `${origin}/auth/callback`
 
   // Built with the URL API so an existing query string on the configured
   // redirect URL is preserved rather than clobbered.
@@ -185,9 +189,11 @@ export async function requestPasswordReset(
         // Log delivery failures server-side; the member still sees the generic
         // message rather than a scary error they can't act on.
         if (!sent.ok) {
-          console.log("[v0] Resend delivery failed:", sent.error)
+          console.error("Password reset email failed:", sent.error)
         }
       }
+    } else if (error && !/not found|no user/i.test(error.message)) {
+      console.error("Password reset link generation failed:", error.message)
     }
 
     return { ok: true, message: generic }
