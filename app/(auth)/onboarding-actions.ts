@@ -103,6 +103,57 @@ export async function createChurchAndAdmin(
   redirect("/billing")
 }
 
+/** Accepts a bare slug or a full invite URL like https://site/join/grace-church. */
+function parseInviteSlug(input: string): string {
+  const trimmed = input.trim()
+  const match = trimmed.match(/\/join\/([^/?#]+)/i)
+  const raw = match ? match[1] : trimmed
+  return decodeURIComponent(raw).toLowerCase().replace(/[^a-z0-9-]/g, "")
+}
+
+/**
+ * Attach an already signed-in member who has no church to the church behind
+ * an invite link. Only ever fills an empty church_id, never moves a member
+ * between churches, and never touches their role.
+ */
+export async function linkToChurchByInvite(
+  _prev: AuthResult | null,
+  formData: FormData,
+): Promise<AuthResult> {
+  const slug = parseInviteSlug(String(formData.get("invite") ?? ""))
+  if (!slug) return { ok: false, message: "Paste the invite link your church leader shared." }
+  if (!isSupabaseConfigured()) return { ok: false, message: "Connect Supabase to join a church." }
+
+  const supabase = await getSupabaseServerClient()
+  const admin = getSupabaseAdminClient()
+  if (!supabase || !admin) return { ok: false, message: "Server is not fully configured." }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, message: "Please sign in again." }
+
+  const church = await getChurchBySlug(slug)
+  if (!church) return { ok: false, message: "That invite link doesn't match any church." }
+  if (!churchIsEntitled(church)) {
+    return { ok: false, message: "This church's account is not active yet. Please check with your leader." }
+  }
+
+  const { data: updated, error } = await admin
+    .from("profiles")
+    .update({ church_id: church.id })
+    .eq("id", user.id)
+    .is("church_id", null)
+    .select("id")
+
+  if (error) return { ok: false, message: "Could not join that church. Please try again." }
+  if (!updated || updated.length === 0) {
+    return { ok: false, message: "Your account is already linked to a church." }
+  }
+
+  redirect("/")
+}
+
 /**
  * Join an existing church as a member. Only allowed when the church has an
  * active subscription, so members can't pile into a church that hasn't paid.
