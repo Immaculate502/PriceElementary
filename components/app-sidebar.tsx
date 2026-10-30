@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   BookOpen,
   CalendarClock,
+  CalendarDays,
   GraduationCap,
   HandHeart,
   Home,
@@ -20,6 +21,7 @@ import { RootedEmblem } from "./rooted-emblem"
 
 const memberLinks = [
   { href: "/", label: "Dashboard", icon: Home },
+  { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/activities", label: "Activities", icon: ListChecks },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/bible-study", label: "Bible Study", icon: BookOpen },

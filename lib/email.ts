@@ -28,6 +28,54 @@ type SendArgs = {
 
 export type SendResult = { ok: boolean; error?: string }
 
+/**
+ * Sends many individual emails via Resend's batch endpoint (max 100 per call),
+ * so recipients never see each other's addresses.
+ */
+export async function sendBatchEmails(
+  messages: SendArgs[],
+): Promise<{ sent: number; failed: number; error?: string }> {
+  if (!isEmailConfigured()) return { sent: 0, failed: messages.length, error: "Email is not configured." }
+  let sent = 0
+  let failed = 0
+  let lastError: string | undefined
+
+  for (let i = 0; i < messages.length; i += 100) {
+    const chunk = messages.slice(i, i + 100)
+    try {
+      const res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          chunk.map((m) => ({
+            from: RESEND_FROM_EMAIL,
+            to: m.to,
+            subject: m.subject,
+            html: m.html,
+            text: m.text,
+            ...(m.replyTo ? { reply_to: m.replyTo } : {}),
+          })),
+        ),
+        signal: AbortSignal.timeout(20_000),
+      })
+      if (res.ok) {
+        sent += chunk.length
+      } else {
+        failed += chunk.length
+        lastError = `Resend responded ${res.status}: ${await res.text().catch(() => "")}`
+      }
+    } catch (err) {
+      failed += chunk.length
+      lastError = err instanceof Error ? err.message : "Unknown email error"
+    }
+  }
+
+  return { sent, failed, error: lastError }
+}
+
 export async function sendEmail({ to, subject, html, text, replyTo }: SendArgs): Promise<SendResult> {
   if (!isEmailConfigured()) {
     return { ok: false, error: "Email is not configured." }

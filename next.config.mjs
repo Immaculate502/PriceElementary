@@ -6,6 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // Event banners/flyers are uploaded through a server action (max 5 MB).
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   async headers() {
     return [
       {

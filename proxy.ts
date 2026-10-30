@@ -45,7 +45,11 @@ export async function proxy(request: NextRequest) {
   // leadership sign-in (/admin/login) manages its own role-based redirects, so
   // it must stay reachable whether or not a session exists.
   const isPublicRoute =
-    path.startsWith("/auth/") || path.startsWith("/api/") || path === "/admin/login"
+    path.startsWith("/auth/") ||
+    path.startsWith("/api/") ||
+    path === "/admin/login" ||
+    // Public church event pages are shareable with non-members.
+    path.startsWith("/church/")
 
   if (isPublicRoute) {
     return response

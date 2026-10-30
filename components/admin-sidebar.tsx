@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   ArrowLeft,
+  CalendarDays,
   ClipboardList,
   FileCheck2,
   GraduationCap,
@@ -24,6 +25,7 @@ export const adminNavLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/setup", label: "Setup", icon: Rocket, exact: true },
   { href: "/admin/members", label: "Members", icon: Users },
+  { href: "/admin/events", label: "Event Center", icon: CalendarDays },
   { href: "/admin/vocal", label: "VOCAL", icon: Mic },
   { href: "/admin/activities", label: "Activities", icon: ClipboardList },
   { href: "/admin/lessons", label: "Lessons", icon: GraduationCap, exact: true },
